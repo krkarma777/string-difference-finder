@@ -13,13 +13,13 @@ button {
 }
 
 .deleted {
-    background-color: #ffcccc;
-}
-.added {
-    background-color: #ccffcc;
+    background-color: #f8d7da;
 }
 
-.result-line {
-    white-space: pre-wrap;
-    font-family: monospace;
+.added {
+    background-color: #d4edda;
+}
+
+.placeholder {
+    visibility: hidden;
 }
