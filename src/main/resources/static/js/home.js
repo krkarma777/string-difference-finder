@@ -1,11 +1,100 @@
 /**
+ * Computes the Longest Common Subsequence (LCS) of two strings using Hirschberg's algorithm.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {string} The LCS of the two strings.
+ */
+function hirschbergLCS(a, b) {
+    if (a.length === 0 || b.length === 0) {
+        return '';
+    }
+    if (a.length === 1 || b.length === 1) {
+        return lcsBaseCase(a, b);
+    }
+
+    const mid = Math.floor(a.length / 2);
+    const l1 = lcsLengths(a.slice(0, mid), b);
+    const l2 = lcsLengths(reverseString(a.slice(mid)), reverseString(b));
+    const partition = findPartition(l1, l2);
+
+    const leftLCS = hirschbergLCS(a.slice(0, mid), b.slice(0, partition));
+    const rightLCS = hirschbergLCS(a.slice(mid), b.slice(partition));
+    return leftLCS + rightLCS;
+}
+
+/**
+ * Computes the LCS lengths array using dynamic programming.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {Array} The LCS lengths array.
+ */
+function lcsLengths(a, b) {
+    const curr = Array(b.length + 1).fill(0);
+    const prev = Array(b.length + 1).fill(0);
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            if (a[i - 1] === b[j - 1]) {
+                curr[j] = prev[j - 1] + 1;
+            } else {
+                curr[j] = Math.max(curr[j - 1], prev[j]);
+            }
+        }
+        for (let j = 0; j <= b.length; j++) {
+            prev[j] = curr[j];
+        }
+    }
+    return curr;
+}
+
+/**
+ * Reverses a string.
+ * @param {string} s - The string to reverse.
+ * @returns {string} The reversed string.
+ */
+function reverseString(s) {
+    return s.split('').reverse().join('');
+}
+
+/**
+ * Finds the partition index for the LCS.
+ * @param {Array} l1 - The LCS lengths array for the first half.
+ * @param {Array} l2 - The LCS lengths array for the second half.
+ * @returns {number} The partition index.
+ */
+function findPartition(l1, l2) {
+    const l2Reversed = l2.reverse();
+    let max = -1;
+    let index = 0;
+
+    for (let i = 0; i < l1.length; i++) {
+        if (l1[i] + l2Reversed[i] > max) {
+            max = l1[i] + l2Reversed[i];
+            index = i;
+        }
+    }
+    return index;
+}
+
+/**
+ * Handles the base case for LCS calculation when one of the strings has length 1.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {string} The LCS of the two strings.
+ */
+function lcsBaseCase(a, b) {
+    const [short, long] = a.length < b.length ? [a, b] : [b, a];
+    return short.split('').find(char => long.includes(char)) || '';
+}
+
+/**
  * Calculates the differences between two strings using the Longest Common Subsequence (LCS) algorithm.
  * @param {string} a - The first string to compare.
  * @param {string} b - The second string to compare.
  * @returns {Array} An array of diff objects with operations: 'equal', 'delete', 'insert'.
  */
 function diff(a, b) {
-    const lcs = longestCommonSubsequence(a, b);
+    const lcs = hirschbergLCS(a, b);
     let i = 0, j = 0, k = 0;
     const diffs = [];
 
@@ -29,27 +118,6 @@ function diff(a, b) {
     }
 
     return diffs;
-}
-
-/**
- * Computes the Longest Common Subsequence (LCS) of two strings.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
- * @returns {string} The LCS of the two strings.
- */
-function longestCommonSubsequence(a, b) {
-    const dp = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(''));
-    // Build the LCS dynamic programming table
-    for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-            if (a[i - 1] === b[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1] + a[i - 1];
-            } else {
-                dp[i][j] = dp[i - 1][j].length > dp[i][j - 1].length ? dp[i - 1][j] : dp[i][j - 1];
-            }
-        }
-    }
-    return dp[a.length][b.length];
 }
 
 /**
