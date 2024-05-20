@@ -13,11 +13,10 @@ button {
 }
 
 .deleted {
-    background-color: pink;
+    background-color: #ffcccc;
 }
-
 .added {
-    background-color: violet;
+    background-color: #ccffcc;
 }
 
 .result-line {
