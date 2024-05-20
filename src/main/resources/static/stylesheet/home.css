@@ -1,0 +1,26 @@
+textarea {
+    width: 300px;
+    height: 60px;
+    margin-top: 10px;
+}
+
+button {
+    margin-top: 10px;
+}
+
+.difference {
+    margin-top: 20px;
+}
+
+.deleted {
+    background-color: pink;
+}
+
+.added {
+    background-color: violet;
+}
+
+.result-line {
+    white-space: pre-wrap;
+    font-family: monospace;
+}

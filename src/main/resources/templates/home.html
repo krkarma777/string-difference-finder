@@ -4,50 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>String Difference Finder</title>
-    <style>
-        textarea { width: 300px; height: 60px; margin-top: 10px; }
-        button { margin-top: 10px; }
-        .difference { margin-top: 20px; }
-        .deleted { background-color: pink; }
-        .added { background-color: violet; }
-        .result-line { white-space: pre-wrap; font-family: monospace; }
-    </style>
+    <link rel="stylesheet" href="/stylesheet/home.css"/>
 </head>
 <body>
 <h1>String Difference Finder</h1>
-<textarea id="string1" placeholder="Enter first string">committer_list_per_month[date + '-' + log[i].author] = 1;</textarea>
+<label for="string1"></label>
+<textarea id="string1" placeholder="Enter first string">
+    committer_list_per_month[date + '-' + log[i].author] = 1;
+</textarea>
 <br>
-<textarea id="string2" placeholder="Enter second string">var date_author = date + '-' + log[i].author;</textarea>
+<label for="string2"></label>
+<textarea id="string2" placeholder="Enter second string">
+    var date_author = date + '-' + log[i].author;
+</textarea>
 <br>
 <button onclick="findDifference()">Show Difference</button>
 <div id="result" class="difference"></div>
-
-<script>
-    function findDifference() {
-        const string1 = document.getElementById('string1').value;
-        const string2 = document.getElementById('string2').value;
-        const result = document.getElementById('result');
-        result.innerHTML = '';
-
-        let output1 = '';
-        let output2 = '';
-
-        const maxLineLength = Math.max(string1.length, string2.length);
-        for (let i = 0; i < maxLineLength; i++) {
-            const char1 = string1[i] || '';
-            const char2 = string2[i] || '';
-            if (char1 !== char2) {
-                output1 += '<span class="deleted">' + char1 + '</span>';
-                output2 += '<span class="added">' + char2 + '</span>';
-            } else {
-                output1 += char1;
-                output2 += char2;
-            }
-        }
-
-        result.innerHTML += '<div class="result-line">' + output1 + '</div>';
-        result.innerHTML += '<div class="result-line">' + output2 + '</div>';
-    }
-</script>
+<script src="/js/home.js"></script>
 </body>
 </html>
