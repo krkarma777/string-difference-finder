@@ -1,8 +1,15 @@
+/**
+ * Calculates the differences between two strings using the Longest Common Subsequence (LCS) algorithm.
+ * @param {string} a - The first string to compare.
+ * @param {string} b - The second string to compare.
+ * @returns {Array} An array of diff objects with operations: 'equal', 'delete', 'insert'.
+ */
 function diff(a, b) {
     const lcs = longestCommonSubsequence(a, b);
     let i = 0, j = 0, k = 0;
     const diffs = [];
 
+    // Iterate through both strings to determine differences based on LCS
     while (i < a.length || j < b.length) {
         if (k < lcs.length && a[i] === lcs[k] && b[j] === lcs[k]) {
             diffs.push({ operation: 'equal', text: lcs[k] });
@@ -24,8 +31,15 @@ function diff(a, b) {
     return diffs;
 }
 
+/**
+ * Computes the Longest Common Subsequence (LCS) of two strings.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {string} The LCS of the two strings.
+ */
 function longestCommonSubsequence(a, b) {
     const dp = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(''));
+    // Build the LCS dynamic programming table
     for (let i = 1; i <= a.length; i++) {
         for (let j = 1; j <= b.length; j++) {
             if (a[i - 1] === b[j - 1]) {
@@ -38,7 +52,10 @@ function longestCommonSubsequence(a, b) {
     return dp[a.length][b.length];
 }
 
-// Function for visualizing the differences
+/**
+ * Finds and visualizes the differences between two input strings.
+ * Highlights deletions in red and insertions in green.
+ */
 function findDifference() {
     console.log("findDifference called");
     const string1 = document.getElementById('string1').value;
@@ -48,6 +65,7 @@ function findDifference() {
 
     const startTime = performance.now();
 
+    // Check for identical strings early to avoid unnecessary calculations
     if (string1 === string2) {
         const endTime = performance.now();
         const timeTaken = endTime - startTime;
@@ -59,6 +77,7 @@ function findDifference() {
     console.log("Input strings:", string1, string2);
     const diffs = diff(string1, string2);
 
+    // Handle the case where no differences are found
     if (diffs.length === 0) {
         const endTime = performance.now();
         const timeTaken = endTime - startTime;
@@ -71,6 +90,7 @@ function findDifference() {
     let deletedParts = '';
     let insertedParts = '';
 
+    // Construct the visual representation of the differences
     diffs.forEach(part => {
         if (part.operation === 'delete') {
             deletedParts += '<span class="deleted">' + escapeHtml(part.text) + '</span>';
@@ -87,11 +107,17 @@ function findDifference() {
     const endTime = performance.now();
     const timeTaken = endTime - startTime;
 
+    // Display the result and time taken
     result.innerHTML = '<div class="result-line">' + deletedParts + '</div>' +
         '<div class="result-line">' + insertedParts + '</div>' +
         '<div class="time-taken">Time taken: ' + timeTaken.toFixed(2) + ' ms</div>';
 }
 
+/**
+ * Escapes HTML characters to prevent XSS attacks.
+ * @param {string} text - The text to escape.
+ * @returns {string} The escaped text.
+ */
 function escapeHtml(text) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
