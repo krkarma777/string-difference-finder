@@ -88,17 +88,63 @@ function lcsBaseCase(a, b) {
 }
 
 /**
+ * Finds the common prefix of two strings.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {number} The length of the common prefix.
+ */
+function commonPrefix(a, b) {
+    let i;
+    for (i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] !== b[i]) break;
+    }
+    return i;
+}
+
+/**
+ * Finds the common suffix of two strings.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {number} The length of the common suffix.
+ */
+function commonSuffix(a, b) {
+    let i;
+    for (i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[a.length - i - 1] !== b[b.length - i - 1]) break;
+    }
+    return i;
+}
+
+/**
  * Calculates the differences between two strings using the Longest Common Subsequence (LCS) algorithm.
  * @param {string} a - The first string to compare.
  * @param {string} b - The second string to compare.
  * @returns {Array} An array of diff objects with operations: 'equal', 'delete', 'insert'.
  */
 function diff(a, b) {
-    const lcs = hirschbergLCS(a, b);
-    let i = 0, j = 0, k = 0;
     const diffs = [];
 
-    // Iterate through both strings to determine differences based on LCS
+    // Check for common prefix
+    const prefixLength = commonPrefix(a, b);
+    if (prefixLength > 0) {
+        diffs.push({ operation: 'equal', text: a.substring(0, prefixLength) });
+        a = a.substring(prefixLength);
+        b = b.substring(prefixLength);
+    }
+
+    // Check for common suffix
+    const suffixLength = commonSuffix(a, b);
+    let suffix = '';
+    if (suffixLength > 0) {
+        suffix = a.substring(a.length - suffixLength);
+        a = a.substring(0, a.length - suffixLength);
+        b = b.substring(0, b.length - suffixLength);
+    }
+
+    // Perform LCS-based diff
+    const lcs = hirschbergLCS(a, b);
+    let i = 0, j = 0, k = 0;
+
     while (i < a.length || j < b.length) {
         if (k < lcs.length && a[i] === lcs[k] && b[j] === lcs[k]) {
             diffs.push({ operation: 'equal', text: lcs[k] });
@@ -115,6 +161,11 @@ function diff(a, b) {
                 j++;
             }
         }
+    }
+
+    // Add common suffix to the end of diffs
+    if (suffixLength > 0) {
+        diffs.push({ operation: 'equal', text: suffix });
     }
 
     return diffs;
