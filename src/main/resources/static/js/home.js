@@ -1,90 +1,82 @@
 /**
- * Computes the Longest Common Subsequence (LCS) of two strings using Hirschberg's algorithm.
+ * Computes the LCS of two strings using the candidate method as described in the diff algorithm.
  * @param {string} a - The first string.
  * @param {string} b - The second string.
- * @returns {string} The LCS of the two strings.
+ * @returns {Array} The LCS of the two strings as a list of indices.
  */
-function hirschbergLCS(a, b) {
-    if (a.length === 0 || b.length === 0) {
-        return '';
+function candidateLCS(a, b) {
+    const n = a.length;
+    const m = b.length;
+
+    if (n === 0 || m === 0) {
+        return [];
     }
-    if (a.length === 1 || b.length === 1) {
-        return lcsBaseCase(a, b);
+
+    // Step 1: Create equivalence classes for b
+    const eqClasses = {};
+    for (let j = 0; j < m; j++) {
+        if (!eqClasses[b[j]]) {
+            eqClasses[b[j]] = [];
+        }
+        eqClasses[b[j]].push(j + 1);
     }
 
-    const mid = Math.floor(a.length / 2);
-    const l1 = lcsLengths(a.slice(0, mid), b);
-    const l2 = lcsLengths(reverseString(a.slice(mid)), reverseString(b));
-    const partition = findPartition(l1, l2);
+    // Step 2: Initialize the candidate list
+    let candidates = [{ i: 0, j: 0 }];
+    const prev = Array(n + 1).fill(0);
 
-    const leftLCS = hirschbergLCS(a.slice(0, mid), b.slice(0, partition));
-    const rightLCS = hirschbergLCS(a.slice(mid), b.slice(partition));
-    return leftLCS + rightLCS;
-}
-
-/**
- * Computes the LCS lengths array using dynamic programming.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
- * @returns {Array} The LCS lengths array.
- */
-function lcsLengths(a, b) {
-    const curr = Array(b.length + 1).fill(0);
-    const prev = Array(b.length + 1).fill(0);
-
-    for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-            if (a[i - 1] === b[j - 1]) {
-                curr[j] = prev[j - 1] + 1;
-            } else {
-                curr[j] = Math.max(curr[j - 1], prev[j]);
+    for (let i = 1; i <= n; i++) {
+        let newCandidates = [];
+        if (eqClasses[a[i - 1]]) {
+            for (const j of eqClasses[a[i - 1]]) {
+                if (j > prev[i - 1]) {
+                    newCandidates.push({ i: i, j: j });
+                    prev[i] = j;
+                    break;
+                }
             }
         }
-        for (let j = 0; j <= b.length; j++) {
-            prev[j] = curr[j];
+        candidates = mergeCandidates(candidates, newCandidates);
+    }
+
+    return candidates.map(c => ({ i: c.i - 1, j: c.j - 1 }));
+}
+
+/**
+ * Merges two lists of candidates, maintaining the order and removing duplicates.
+ * @param {Array} candidates - The existing list of candidates.
+ * @param {Array} newCandidates - The new list of candidates to merge.
+ * @returns {Array} The merged list of candidates.
+ */
+function mergeCandidates(candidates, newCandidates) {
+    let merged = [];
+    let i = 0, j = 0;
+
+    while (i < candidates.length && j < newCandidates.length) {
+        if (candidates[i].j < newCandidates[j].j) {
+            merged.push(candidates[i]);
+            i++;
+        } else if (candidates[i].j > newCandidates[j].j) {
+            merged.push(newCandidates[j]);
+            j++;
+        } else {
+            merged.push(newCandidates[j]);
+            i++;
+            j++;
         }
     }
-    return curr;
-}
 
-/**
- * Reverses a string.
- * @param {string} s - The string to reverse.
- * @returns {string} The reversed string.
- */
-function reverseString(s) {
-    return s.split('').reverse().join('');
-}
-
-/**
- * Finds the partition index for the LCS.
- * @param {Array} l1 - The LCS lengths array for the first half.
- * @param {Array} l2 - The LCS lengths array for the second half.
- * @returns {number} The partition index.
- */
-function findPartition(l1, l2) {
-    const l2Reversed = l2.reverse();
-    let max = -1;
-    let index = 0;
-
-    for (let i = 0; i < l1.length; i++) {
-        if (l1[i] + l2Reversed[i] > max) {
-            max = l1[i] + l2Reversed[i];
-            index = i;
-        }
+    while (i < candidates.length) {
+        merged.push(candidates[i]);
+        i++;
     }
-    return index;
-}
 
-/**
- * Handles the base case for LCS calculation when one of the strings has length 1.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
- * @returns {string} The LCS of the two strings.
- */
-function lcsBaseCase(a, b) {
-    const [short, long] = a.length < b.length ? [a, b] : [b, a];
-    return short.split('').find(char => long.includes(char)) || '';
+    while (j < newCandidates.length) {
+        merged.push(newCandidates[j]);
+        j++;
+    }
+
+    return merged;
 }
 
 /**
@@ -116,7 +108,7 @@ function commonSuffix(a, b) {
 }
 
 /**
- * Calculates the differences between two strings using the Longest Common Subsequence (LCS) algorithm.
+ * Calculates the differences between two strings using the LCS algorithm with candidate optimization.
  * @param {string} a - The first string to compare.
  * @param {string} b - The second string to compare.
  * @returns {Array} An array of diff objects with operations: 'equal', 'delete', 'insert'.
@@ -141,22 +133,22 @@ function diff(a, b) {
         b = b.substring(0, b.length - suffixLength);
     }
 
-    // Perform LCS-based diff
-    const lcs = hirschbergLCS(a, b);
+    // Perform candidate-based LCS diff
+    const lcsIndices = candidateLCS(a, b);
     let i = 0, j = 0, k = 0;
 
     while (i < a.length || j < b.length) {
-        if (k < lcs.length && a[i] === lcs[k] && b[j] === lcs[k]) {
-            diffs.push({ operation: 'equal', text: lcs[k] });
+        if (k < lcsIndices.length && i === lcsIndices[k].i && j === lcsIndices[k].j) {
+            diffs.push({ operation: 'equal', text: a[i] });
             i++;
             j++;
             k++;
         } else {
-            if (i < a.length && (k >= lcs.length || a[i] !== lcs[k])) {
+            if (i < a.length && (k >= lcsIndices.length || i !== lcsIndices[k].i)) {
                 diffs.push({ operation: 'delete', text: a[i] });
                 i++;
             }
-            if (j < b.length && (k >= lcs.length || b[j] !== lcs[k])) {
+            if (j < b.length && (k >= lcsIndices.length || j !== lcsIndices[k].j)) {
                 diffs.push({ operation: 'insert', text: b[j] });
                 j++;
             }
