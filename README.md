@@ -1,5 +1,5 @@
 # String Difference Finder
-![image](https://github.com/krkarma777/string-difference-finder/assets/149022496/3308901b-2764-417b-8775-bbeb4764e959)
+![image](https://github.com/krkarma777/string-difference-finder/assets/149022496/8ca96001-bfac-4c1d-8168-108901ab3537)
 
 ## Overview
 
