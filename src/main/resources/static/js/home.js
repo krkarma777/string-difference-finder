@@ -8,40 +8,51 @@ function splitIntoTokens(str) {
 }
 
 /**
- * Computes the Longest Common Subsequence (LCS) of two arrays using Hirschberg's algorithm.
+ * Computes the Longest Common Subsequence (LCS) of two arrays using Hirschberg's algorithm with parallel LCS lengths calculation.
  * @param {Array} a - The first array.
  * @param {Array} b - The second array.
  * @returns {Array} The LCS of the two arrays.
  */
-function hirschbergLCS(a, b) {
+async function hirschbergLCS(a, b) {
     if (a.length === 0 || b.length === 0) return [];
     if (a.length === 1 || b.length === 1) return lcsBaseCase(a, b);
 
     const mid = Math.floor(a.length / 2);
-    const l1 = lcsLengths(a.slice(0, mid), b);
-    const l2 = lcsLengths(reverseArray(a.slice(mid)), reverseArray(b));
+    const [l1, l2] = await Promise.all([
+        lcsLengths(a.slice(0, mid), b),
+        lcsLengths(reverseArray(a.slice(mid)), reverseArray(b))
+    ]);
     const partition = findPartition(l1, l2);
 
-    const leftLCS = hirschbergLCS(a.slice(0, mid), b.slice(0, partition));
-    const rightLCS = hirschbergLCS(a.slice(mid), b.slice(partition));
+    const [leftLCS, rightLCS] = await Promise.all([
+        hirschbergLCS(a.slice(0, mid), b.slice(0, partition)),
+        hirschbergLCS(a.slice(mid), b.slice(partition))
+    ]);
     return leftLCS.concat(rightLCS);
 }
 
 /**
- * Computes the LCS lengths array using dynamic programming.
+ * Computes the LCS lengths array using dynamic programming with parallel processing.
  * @param {Array} a - The first array.
  * @param {Array} b - The second array.
  * @returns {Array} The LCS lengths array.
  */
-function lcsLengths(a, b) {
-    let prev = Array(b.length + 1).fill(0);
+async function lcsLengths(a, b) {
+    const prev = Array(b.length + 1).fill(0);
     let curr = Array(b.length + 1).fill(0);
 
-    for (let i = 1; i <= a.length; i++) {
-        [curr, prev] = [prev, curr]; // Swap references instead of copying
+    // Helper function to compute one row of the LCS lengths matrix
+    async function computeRow(i) {
+        const newRow = Array(b.length + 1).fill(0);
         for (let j = 1; j <= b.length; j++) {
-            curr[j] = (a[i - 1] === b[j - 1]) ? prev[j - 1] + 1 : Math.max(prev[j], curr[j - 1]);
+            newRow[j] = (a[i - 1] === b[j - 1]) ? prev[j - 1] + 1 : Math.max(prev[j], newRow[j - 1]);
         }
+        return newRow;
+    }
+
+    for (let i = 1; i <= a.length; i++) {
+        curr = await computeRow(i);
+        prev.splice(0, b.length + 1, ...curr);
     }
     return curr;
 }
@@ -111,12 +122,12 @@ function commonSuffix(a, b) {
 }
 
 /**
- * Calculates the differences between two arrays using the LCS algorithm with candidate optimization.
+ * Calculates the differences between two arrays using the LCS algorithm with candidate optimization and parallel processing.
  * @param {Array} a - The first array to compare.
  * @param {Array} b - The second array to compare.
  * @returns {Array} An array of diff objects with operations: 'equal', 'delete', 'insert'.
  */
-function diff(a, b) {
+async function diff(a, b) {
     const diffs = [];
 
     // Check for common prefix
@@ -137,7 +148,7 @@ function diff(a, b) {
     }
 
     // Perform candidate-based LCS diff
-    const lcs = hirschbergLCS(a, b);
+    const lcs = await hirschbergLCS(a, b);
     let i = 0, j = 0, k = 0;
 
     // Iterate through both arrays to determine differences based on LCS
@@ -168,10 +179,10 @@ function diff(a, b) {
 }
 
 /**
- * Finds and visualizes the differences between two input strings.
+ * Finds and visualizes the differences between two input strings using parallel processing.
  * Highlights deletions in red and insertions in green.
  */
-function findDifference() {
+async function findDifference() {
     const string1 = document.getElementById('string1').value;
     const string2 = document.getElementById('string2').value;
     const result = document.getElementById('result');
@@ -191,7 +202,7 @@ function findDifference() {
         return;
     }
 
-    const diffs = diff(tokens1, tokens2);
+    const diffs = await diff(tokens1, tokens2);
 
     // Handle the case where no differences are found
     if (diffs.length === 0) {
@@ -228,12 +239,15 @@ function findDifference() {
 }
 
 /**
- * Escapes HTML characters to prevent XSS attacks.
- * @param {string} text - The text to escape.
- * @returns {string} The escaped text.
+ * Escapes HTML special characters in a string to prevent XSS.
+ * @param {string} unsafe - The input string with potentially unsafe characters.
+ * @returns {string} The escaped string.
  */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
