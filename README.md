@@ -96,7 +96,7 @@ server.port=8090
 
 ## Contributing
 
-We welcome contributions to improve this tool! Here are some ways you can help:
+Welcome contributions to improve this tool! Here are some ways you can help:
 
 - Reporting issues
 - Adding new features
