@@ -16,6 +16,7 @@ String Difference Finder is a web-based tool that allows you to compare two stri
 
 ### Prerequisites
 
+- Java Development Kit (JDK) 17 or later
 - A web browser (Chrome, Firefox, Safari, etc.)
 - A web server to host the HTML and JavaScript files (optional for local usage)
 
@@ -27,7 +28,15 @@ String Difference Finder is a web-based tool that allows you to compare two stri
    cd string-difference-finder
    ```
 
-2. Open `index.html` in your web browser.
+2. Build and run the Spring Boot application:
+   ```sh
+   ./gradlew bootRun
+   ```
+
+3. Open your web browser and navigate to:
+   ```
+   http://localhost:8090/
+   ```
 
 ### Usage
 
