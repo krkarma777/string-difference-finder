@@ -29,19 +29,13 @@ function hirschbergLCS(a, b) {
  * @returns {Array} The LCS lengths array.
  */
 function lcsLengths(a, b) {
-    const curr = Array(b.length + 1).fill(0);
-    const prev = Array(b.length + 1).fill(0);
+    let prev = Array(b.length + 1).fill(0);
+    let curr = Array(b.length + 1).fill(0);
 
     for (let i = 1; i <= a.length; i++) {
+        [curr, prev] = [prev, curr]; // Swap references instead of copying
         for (let j = 1; j <= b.length; j++) {
-            if (a[i - 1] === b[j - 1]) {
-                curr[j] = prev[j - 1] + 1;
-            } else {
-                curr[j] = Math.max(curr[j - 1], prev[j]);
-            }
-        }
-        for (let j = 0; j <= b.length; j++) {
-            prev[j] = curr[j];
+            curr[j] = (a[i - 1] === b[j - 1]) ? prev[j - 1] + 1 : Math.max(prev[j], curr[j - 1]);
         }
     }
     return curr;
