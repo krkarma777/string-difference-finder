@@ -1,31 +1,36 @@
 /**
- * Computes the Longest Common Subsequence (LCS) of two strings using Hirschberg's algorithm.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
- * @returns {string} The LCS of the two strings.
+ * Splits the string into tokens for more meaningful diffs.
+ * @param {string} str - The input string.
+ * @returns {Array} Array of tokens.
+ */
+function splitIntoTokens(str) {
+    return str.match(/(\w+|\s+|[^\s\w]+)/g) || [];
+}
+
+/**
+ * Computes the Longest Common Subsequence (LCS) of two arrays using Hirschberg's algorithm.
+ * @param {Array} a - The first array.
+ * @param {Array} b - The second array.
+ * @returns {Array} The LCS of the two arrays.
  */
 function hirschbergLCS(a, b) {
-    if (a.length === 0 || b.length === 0) {
-        return '';
-    }
-    if (a.length === 1 || b.length === 1) {
-        return lcsBaseCase(a, b);
-    }
+    if (a.length === 0 || b.length === 0) return [];
+    if (a.length === 1 || b.length === 1) return lcsBaseCase(a, b);
 
     const mid = Math.floor(a.length / 2);
     const l1 = lcsLengths(a.slice(0, mid), b);
-    const l2 = lcsLengths(reverseString(a.slice(mid)), reverseString(b));
+    const l2 = lcsLengths(reverseArray(a.slice(mid)), reverseArray(b));
     const partition = findPartition(l1, l2);
 
     const leftLCS = hirschbergLCS(a.slice(0, mid), b.slice(0, partition));
     const rightLCS = hirschbergLCS(a.slice(mid), b.slice(partition));
-    return leftLCS + rightLCS;
+    return leftLCS.concat(rightLCS);
 }
 
 /**
  * Computes the LCS lengths array using dynamic programming.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
+ * @param {Array} a - The first array.
+ * @param {Array} b - The second array.
  * @returns {Array} The LCS lengths array.
  */
 function lcsLengths(a, b) {
@@ -42,13 +47,11 @@ function lcsLengths(a, b) {
 }
 
 /**
- * Reverses a string.
- * @param {string} s - The string to reverse.
- * @returns {string} The reversed string.
+ * Reverses an array.
+ * @param {Array} arr - The array to reverse.
+ * @returns {Array} The reversed array.
  */
-function reverseString(s) {
-    return [...s].reverse().join('');
-}
+const reverseArray = arr => [...arr].reverse();
 
 /**
  * Finds the partition index for the LCS.
@@ -71,50 +74,46 @@ function findPartition(l1, l2) {
 }
 
 /**
- * Handles the base case for LCS calculation when one of the strings has length 1.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
- * @returns {string} The LCS of the two strings.
+ * Handles the base case for LCS calculation when one of the arrays has length 1.
+ * @param {Array} a - The first array.
+ * @param {Array} b - The second array.
+ * @returns {Array} The LCS of the two arrays.
  */
 function lcsBaseCase(a, b) {
     const [short, long] = a.length < b.length ? [a, b] : [b, a];
-    return short.split('').find(char => long.includes(char)) || '';
+    return short.filter(char => long.includes(char));
 }
 
 /**
- * Finds the common prefix of two strings.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
+ * Finds the common prefix of two arrays.
+ * @param {Array} a - The first array.
+ * @param {Array} b - The second array.
  * @returns {number} The length of the common prefix.
  */
 function commonPrefix(a, b) {
     let i = 0;
     const minLen = Math.min(a.length, b.length);
-    while (i < minLen && a[i] === b[i]) {
-        i++;
-    }
+    while (i < minLen && a[i] === b[i]) i++;
     return i;
 }
 
 /**
- * Finds the common suffix of two strings.
- * @param {string} a - The first string.
- * @param {string} b - The second string.
+ * Finds the common suffix of two arrays.
+ * @param {Array} a - The first array.
+ * @param {Array} b - The second array.
  * @returns {number} The length of the common suffix.
  */
 function commonSuffix(a, b) {
     let i = 0;
     const minLen = Math.min(a.length, b.length);
-    while (i < minLen && a[a.length - i - 1] === b[b.length - i - 1]) {
-        i++;
-    }
+    while (i < minLen && a[a.length - i - 1] === b[b.length - i - 1]) i++;
     return i;
 }
 
 /**
- * Calculates the differences between two strings using the LCS algorithm with candidate optimization.
- * @param {string} a - The first string to compare.
- * @param {string} b - The second string to compare.
+ * Calculates the differences between two arrays using the LCS algorithm with candidate optimization.
+ * @param {Array} a - The first array to compare.
+ * @param {Array} b - The second array to compare.
  * @returns {Array} An array of diff objects with operations: 'equal', 'delete', 'insert'.
  */
 function diff(a, b) {
@@ -123,25 +122,25 @@ function diff(a, b) {
     // Check for common prefix
     const prefixLength = commonPrefix(a, b);
     if (prefixLength > 0) {
-        diffs.push({ operation: 'equal', text: a.substring(0, prefixLength) });
-        a = a.substring(prefixLength);
-        b = b.substring(prefixLength);
+        diffs.push({ operation: 'equal', text: a.slice(0, prefixLength).join('') });
+        a = a.slice(prefixLength);
+        b = b.slice(prefixLength);
     }
 
     // Check for common suffix
     const suffixLength = commonSuffix(a, b);
     let suffix = '';
     if (suffixLength > 0) {
-        suffix = a.substring(a.length - suffixLength);
-        a = a.substring(0, a.length - suffixLength);
-        b = b.substring(0, b.length - suffixLength);
+        suffix = a.slice(a.length - suffixLength).join('');
+        a = a.slice(0, a.length - suffixLength);
+        b = b.slice(0, b.length - suffixLength);
     }
 
     // Perform candidate-based LCS diff
     const lcs = hirschbergLCS(a, b);
     let i = 0, j = 0, k = 0;
 
-    // Iterate through both strings to determine differences based on LCS
+    // Iterate through both arrays to determine differences based on LCS
     while (i < a.length || j < b.length) {
         if (k < lcs.length && a[i] === lcs[k] && b[j] === lcs[k]) {
             diffs.push({ operation: 'equal', text: lcs[k] });
@@ -178,6 +177,9 @@ function findDifference() {
     const result = document.getElementById('result');
     result.innerHTML = '';
 
+    const tokens1 = splitIntoTokens(string1);
+    const tokens2 = splitIntoTokens(string2);
+
     const startTime = performance.now();
 
     // Check for identical strings early to avoid unnecessary calculations
@@ -189,7 +191,7 @@ function findDifference() {
         return;
     }
 
-    const diffs = diff(string1, string2);
+    const diffs = diff(tokens1, tokens2);
 
     // Handle the case where no differences are found
     if (diffs.length === 0) {
@@ -231,7 +233,7 @@ function findDifference() {
  * @returns {string} The escaped text.
  */
 function escapeHtml(text) {
-    var div = document.createElement('div');
+    const div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
 }
