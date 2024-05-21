@@ -43,16 +43,15 @@ async function lcsLengths(a, b) {
 
     // Helper function to compute one row of the LCS lengths matrix
     async function computeRow(i) {
-        const newRow = Array(b.length + 1).fill(0);
         for (let j = 1; j <= b.length; j++) {
-            newRow[j] = (a[i - 1] === b[j - 1]) ? prev[j - 1] + 1 : Math.max(prev[j], newRow[j - 1]);
+            curr[j] = (a[i - 1] === b[j - 1]) ? prev[j - 1] + 1 : Math.max(prev[j], curr[j - 1]);
         }
-        return newRow;
+        // Copy current row to previous row
+        prev.splice(0, b.length + 1, ...curr);
     }
 
     for (let i = 1; i <= a.length; i++) {
-        curr = await computeRow(i);
-        prev.splice(0, b.length + 1, ...curr);
+        await computeRow(i);
     }
     return curr;
 }
@@ -71,7 +70,7 @@ const reverseArray = arr => [...arr].reverse();
  * @returns {number} The partition index.
  */
 function findPartition(l1, l2) {
-    const l2Reversed = l2.reverse();
+    const l2Reversed = [...l2].reverse();
     let max = -1;
     let index = 0;
 
