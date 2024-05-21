@@ -47,7 +47,7 @@ function lcsLengths(a, b) {
  * @returns {string} The reversed string.
  */
 function reverseString(s) {
-    return s.split('').reverse().join('');
+    return [...s].reverse().join('');
 }
 
 /**
