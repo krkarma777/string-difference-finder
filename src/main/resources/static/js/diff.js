@@ -8,52 +8,56 @@ function splitIntoTokens(str) {
 }
 
 /**
- * Computes the Longest Common Subsequence (LCS) of two arrays using Hirschberg's algorithm with parallel LCS lengths calculation.
+ * Computes the Longest Common Subsequence (LCS) of two arrays using Hirschberg's algorithm with space division optimization.
  * @param {Array} a - The first array.
  * @param {Array} b - The second array.
  * @returns {Array} The LCS of the two arrays.
  */
 async function hirschbergLCS(a, b) {
-    if (a.length === 0 || b.length === 0) return [];
-    if (a.length === 1 || b.length === 1) return lcsBaseCase(a, b);
+    if (a.length === 0) return [];
+    if (a.length === 1) return b.includes(a[0]) ? [a[0]] : [];
+    if (b.length === 1) return a.includes(b[0]) ? [b[0]] : [];
 
     const mid = Math.floor(a.length / 2);
+
     const [l1, l2] = await Promise.all([
         lcsLengths(a.slice(0, mid), b),
         lcsLengths(reverseArray(a.slice(mid)), reverseArray(b))
     ]);
+
     const partition = findPartition(l1, l2);
 
     const [leftLCS, rightLCS] = await Promise.all([
         hirschbergLCS(a.slice(0, mid), b.slice(0, partition)),
         hirschbergLCS(a.slice(mid), b.slice(partition))
     ]);
+
     return leftLCS.concat(rightLCS);
 }
 
 /**
- * Computes the LCS lengths array using dynamic programming with parallel processing.
+ * Computes the LCS lengths array using dynamic programming with space optimization.
  * @param {Array} a - The first array.
  * @param {Array} b - The second array.
  * @returns {Array} The LCS lengths array.
  */
 async function lcsLengths(a, b) {
-    const prev = Array(b.length + 1).fill(0);
-    let curr = Array(b.length + 1).fill(0);
-
-    // Helper function to compute one row of the LCS lengths matrix
-    async function computeRow(i) {
-        for (let j = 1; j <= b.length; j++) {
-            curr[j] = (a[i - 1] === b[j - 1]) ? prev[j - 1] + 1 : Math.max(prev[j], curr[j - 1]);
-        }
-        // Copy current row to previous row
-        prev.splice(0, b.length + 1, ...curr);
-    }
+    const n = b.length;
+    let current = new Array(n + 1).fill(0);
+    let previous = new Array(n + 1).fill(0);
 
     for (let i = 1; i <= a.length; i++) {
-        await computeRow(i);
+        for (let j = 1; j <= n; j++) {
+            if (a[i - 1] === b[j - 1]) {
+                current[j] = previous[j - 1] + 1;
+            } else {
+                current[j] = Math.max(previous[j], current[j - 1]);
+            }
+        }
+        [previous, current] = [current, previous];
     }
-    return curr;
+
+    return previous;
 }
 
 /**
@@ -81,17 +85,6 @@ function findPartition(l1, l2) {
         }
     }
     return index;
-}
-
-/**
- * Handles the base case for LCS calculation when one of the arrays has length 1.
- * @param {Array} a - The first array.
- * @param {Array} b - The second array.
- * @returns {Array} The LCS of the two arrays.
- */
-function lcsBaseCase(a, b) {
-    const [short, long] = a.length < b.length ? [a, b] : [b, a];
-    return short.filter(char => long.includes(char));
 }
 
 /**
