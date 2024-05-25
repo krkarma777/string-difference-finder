@@ -94,6 +94,10 @@ server.port=8090
 - **Pre-diff speedups and post-diff cleanups**:
   - [Neil Fraser's writing on diff](https://neil.fraser.name/writing/diff/)
 
+- **Hirschberg  Algorithm**:
+  - [Algorithms for the Longest Common Subsequence Problem](https://dl.acm.org/doi/pdf/10.1145/322033.322044)
+  - [Optimal Sequence Alignment Algorithm Using Space Division Technique](https://scienceon.kisti.re.kr/commons/util/originalView.docn=JAKO200727543156559&oCn=JAKO200727543156559&dbt=JAKO&journal=NJOU00291531&keyword=%EC%B5%9C%EC%A0%81%20%EC%84%9C%EC%97%B4%EC%A0%95%EB%A0%AC)
+ 
 ## Contributing
 
 Welcome contributions to improve this tool! Here are some ways you can help:
