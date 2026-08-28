@@ -88,21 +88,22 @@ Within a changed region, `delete` always precedes `insert`, and adjacent tokens 
 
 ## Benchmarks
 
-Versus the Hirschberg LCS implementation this repository previously shipped (`node bench/bench.mjs`, Node v24, Apple Silicon; legacy receives pre-tokenized input while the new implementation is timed *including* tokenization):
+Versus the Hirschberg LCS implementation this repository previously shipped (`node bench/bench.mjs`, Node v24, Apple Silicon; both pipelines timed end-to-end from raw strings, tokenization included):
 
 | scenario | legacy Hirschberg LCS | Myers (this package) | speedup |
 |---|---|---|---|
-| large text (~44 KB), 10 small edits | 1,088.3 ms | 1.07 ms | **1,015×** |
-| large text (~44 KB), 100 scattered edits | 1,272.4 ms | 1.23 ms | **1,031×** |
-| completely different medium text (~8 KB) | 57.7 ms | 25.9 ms | **2×** |
+| large text (~44 KB), 10 small edits | 1,075.8 ms | 1.04 ms | **1,038×** |
+| large text (~44 KB), 100 scattered edits | 1,213.2 ms | 1.23 ms | **989×** |
+| large text (~44 KB), one clustered edit | 0.7 ms | 0.52 ms | **1.3×** |
+| completely different medium text (~8 KB) | 53.6 ms | 26.9 ms | **2.0×** |
 
 Why the gap: LCS dynamic programming always fills an N×M table — ~300 million cells for the first scenario — no matter how similar the inputs are. Myers explores O((N+M)·D) states, where D is the number of edits, so a 10-word change in a 44 KB document stays in the microsecond-to-millisecond range. The last row is Myers' honest worst case (D ≈ N+M): still ahead, but only just — if you routinely diff completely unrelated inputs, no shortest-edit-script algorithm will save you.
 
 ## How it works
 
 1. **Tokenize** the inputs (`word`, `char`, or `line`).
-2. **Intern** every distinct token into a dense integer id — the entire search then runs over two `Int32Array`s, never touching strings.
-3. **Strip** common prefix/suffix in O(N).
+2. **Strip** the common token prefix/suffix in O(N) *before* anything else, so a localized edit in a large document skips nearly all downstream work.
+3. **Intern** the remaining tokens into dense integer ids — the entire search then runs over two `Int32Array`s, never touching strings. (`char` mode skips tokens and interning entirely: it scans code points straight into an `Int32Array` — the code point *is* the id — and every output text is a single slice of the original input.)
 4. **Myers middle-snake search**: forward and backward D-paths meet in the middle, recursing on the two halves — O((N+M)·D) time, O(N+M) space, with both direction-state arrays allocated exactly once.
 5. **Rebuild** merged `equal`/`delete`/`insert` entries from the changed-token flags.
 
