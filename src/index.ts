@@ -1,5 +1,6 @@
 import { tokenize, type DiffMode } from './tokenize.ts';
 import { myersDiff } from './myers.ts';
+import { diffChars } from './chars.ts';
 
 export { tokenize, type DiffMode };
 
@@ -27,32 +28,52 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
     return a.length === 0 ? [] : [{ operation: 'equal', text: a }];
   }
   const mode = options.mode ?? 'word';
+  if (mode === 'char') return diffChars(a, b);
   return diffTokens(tokenize(a, mode), tokenize(b, mode));
 }
 
 /** Diffs two pre-tokenized sequences. Tokens are compared by exact string equality. */
 export function diffTokens(aTokens: readonly string[], bTokens: readonly string[]): DiffEntry[] {
+  const n = aTokens.length;
+  const m = bTokens.length;
+  const minLen = n < m ? n : m;
+
+  // Strip common affixes before interning so the Map only ever sees the
+  // changed region — for a localized edit this skips almost all hashing.
+  let prefix = 0;
+  while (prefix < minLen && aTokens[prefix] === bTokens[prefix]) prefix++;
+  let suffix = 0;
+  const maxSuffix = minLen - prefix;
+  while (suffix < maxSuffix && aTokens[n - 1 - suffix] === bTokens[m - 1 - suffix]) suffix++;
+
   const ids = new Map<string, number>();
-  const ia = internInto(aTokens, ids);
-  const ib = internInto(bTokens, ids);
-  const { changedA, changedB } = myersDiff(ia, ib);
+  const ia = internRange(aTokens, prefix, n - suffix, ids);
+  const ib = internRange(bTokens, prefix, m - suffix, ids);
+  const mid = myersDiff(ia, ib);
+
+  const changedA = new Uint8Array(n);
+  const changedB = new Uint8Array(m);
+  changedA.set(mid.changedA, prefix);
+  changedB.set(mid.changedB, prefix);
   return buildEntries(aTokens, bTokens, changedA, changedB);
 }
 
 /**
- * Maps tokens to dense integer ids so the hot loops compare Int32Array
- * elements instead of hashing/comparing strings.
+ * Maps tokens[start..end) to dense integer ids so the hot loops compare
+ * Int32Array elements instead of hashing/comparing strings.
  */
-function internInto(tokens: readonly string[], ids: Map<string, number>): Int32Array {
-  const out = new Int32Array(tokens.length);
-  for (let i = 0; i < tokens.length; i++) {
+function internRange(
+  tokens: readonly string[], start: number, end: number, ids: Map<string, number>,
+): Int32Array {
+  const out = new Int32Array(end - start);
+  for (let i = start; i < end; i++) {
     const token = tokens[i];
     let id = ids.get(token);
     if (id === undefined) {
       id = ids.size;
       ids.set(token, id);
     }
-    out[i] = id;
+    out[i - start] = id;
   }
   return out;
 }
