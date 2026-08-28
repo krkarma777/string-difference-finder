@@ -1,118 +1,134 @@
-# String Difference Finder
-![image](https://github.com/krkarma777/string-difference-finder/assets/149022496/8ca96001-bfac-4c1d-8168-108901ab3537)
+# @krkarma777/string-diff
 
-## Overview
+Blazing-fast text diff powered by **Myers' O(ND) algorithm** with token interning and typed arrays. Zero dependencies, TypeScript-first, works in Node and browsers.
 
-String Difference Finder is a web-based tool that allows you to compare two strings and visualize their differences. It highlights deletions in red and insertions in green, providing an intuitive way to understand changes between two versions of text. The tool leverages parallel processing to optimize the performance of the Longest Common Subsequence (LCS) algorithm, making it efficient for large inputs.
+Compared to the naive LCS dynamic-programming approach this repo used to ship, typical diffs are **~1,000× faster** (see [benchmarks](#benchmarks)) — because Myers' algorithm scales with the *size of the change* (D), not the size of the inputs.
 
 ## Features
 
-- **Token-based Diffing**: Splits strings into meaningful tokens for more accurate and readable diffs.
-- **Parallel Processing**: Utilizes parallel processing in LCS calculations to improve performance.
-- **Visual Highlighting**: Highlights deletions and insertions in red and green, respectively.
-- **Performance Metrics**: Displays the time taken to compute the differences.
-- **User-friendly Interface**: Simple and intuitive web interface for comparing strings.
+- **Shortest edit script, guaranteed** — the exact Myers algorithm with the linear-space divide-and-conquer refinement (the same family git uses). No heuristic cutoffs; output is verified optimal against a reference DP in the test suite.
+- **Extreme constant-factor tuning** — every token is interned to an integer once, so the hot loops compare `Int32Array` elements instead of strings; search state lives in two preallocated typed-array scratch buffers reused across the whole recursion (zero GC pressure); common prefixes/suffixes are stripped in O(N).
+- **Unicode-aware tokenization** — `word` mode splits on Unicode letter/digit properties, so Korean, Japanese, and other non-ASCII scripts diff by word instead of collapsing into one opaque blob. `char` mode is code-point safe (no surrogate splitting).
+- **Fully synchronous, zero dependencies** — no worker gymnastics, no async overhead, ~4.7 KB ESM before gzip.
 
-## Getting Started
+## Install
 
-### Prerequisites
-
-- Java Development Kit (JDK) 17 or later
-- A web browser (Chrome, Firefox, Safari, etc.)
-- A web server to host the HTML and JavaScript files (optional for local usage)
-
-### Installation
-
-1. Clone the repository:
-   ```sh
-   git clone https://github.com/krkarma777/string-difference-finder.git
-   cd string-difference-finder
-   ```
-
-2. Build and run the Spring Boot application:
-   ```sh
-   ./gradlew bootRun
-   ```
-
-3. Open your web browser and navigate to:
-   ```
-   http://localhost:8090/
-   ```
-
-### Usage
-
-1. Enter the first string in the "First String" textarea.
-2. Enter the second string in the "Second String" textarea.
-3. Click the "Show Difference" button to see the highlighted differences.
-
-### Example
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>String Difference Finder</title>
-    <link rel="stylesheet" href="/stylesheet/diff.css"/>
-</head>
-<body>
-<h1>String Difference Finder</h1>
-<label for="string1">First String:</label>
-<textarea id="string1" placeholder="Enter first string">
-committer_list_per_month[date + '-' + log[i].author] = 1;
-</textarea>
-<br>
-<label for="string2">Second String:</label>
-<textarea id="string2" placeholder="Enter second string">
-var date_author = date + '-' + log[i].author;
-</textarea>
-<br>
-<button onclick="findDifference()">Show Difference</button>
-<div id="result" class="difference"></div>
-<script src="/js/diff.js"></script>
-</body>
-</html>
+```sh
+npm install @krkarma777/string-diff
 ```
 
-## Configuration
+## Usage
 
-The application can be configured using the `application.properties` file:
+```ts
+import { diff } from '@krkarma777/string-diff';
 
-```properties
-spring.application.name=TextDiffTool
-server.port=8090
+diff('the quick fox', 'the slow fox');
+// [
+//   { operation: 'equal',  text: 'the ' },
+//   { operation: 'delete', text: 'quick' },
+//   { operation: 'insert', text: 'slow' },
+//   { operation: 'equal',  text: ' fox' },
+// ]
+
+diff('안녕하세요 세계', '안녕하세요 지구');
+// [
+//   { operation: 'equal',  text: '안녕하세요 ' },
+//   { operation: 'delete', text: '세계' },
+//   { operation: 'insert', text: '지구' },
+// ]
+```
+
+CommonJS works too:
+
+```js
+const { diff } = require('@krkarma777/string-diff');
+```
+
+Browser (IIFE bundle, global `StringDiff`):
+
+```html
+<script src="https://unpkg.com/@krkarma777/string-diff/dist/string-diff.min.js"></script>
+<script>
+  StringDiff.diff('a b c', 'a x c');
+</script>
+```
+
+## API
+
+### `diff(a, b, options?)`
+
+Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
+
+| option | type | default | description |
+|---|---|---|---|
+| `mode` | `'word' \| 'char' \| 'line'` | `'word'` | tokenization granularity |
+
+- `word` — runs of Unicode letters/digits/underscore, whitespace runs, symbol runs
+- `char` — individual code points (surrogate-pair safe)
+- `line` — lines with their terminators attached
+
+### `diffTokens(aTokens, bTokens)`
+
+Lower-level API: diff two pre-tokenized `string[]` sequences with any tokenization you like.
+
+### `tokenize(text, mode?)`
+
+The built-in tokenizer, exported for reuse.
+
+### `DiffEntry`
+
+```ts
+interface DiffEntry {
+  operation: 'equal' | 'insert' | 'delete';
+  text: string;
+}
+```
+
+Within a changed region, `delete` always precedes `insert`, and adjacent tokens with the same operation are merged into a single entry. Concatenating all non-`insert` texts reproduces `a`; all non-`delete` texts reproduce `b`.
+
+## Benchmarks
+
+Versus the Hirschberg LCS implementation this repository previously shipped (`node bench/bench.mjs`, Node v24, Apple Silicon; legacy receives pre-tokenized input while the new implementation is timed *including* tokenization):
+
+| scenario | legacy Hirschberg LCS | Myers (this package) | speedup |
+|---|---|---|---|
+| large text (~44 KB), 10 small edits | 1,088.3 ms | 1.07 ms | **1,015×** |
+| large text (~44 KB), 100 scattered edits | 1,272.4 ms | 1.23 ms | **1,031×** |
+| completely different medium text (~8 KB) | 57.7 ms | 25.9 ms | **2×** |
+
+Why the gap: LCS dynamic programming always fills an N×M table — ~300 million cells for the first scenario — no matter how similar the inputs are. Myers explores O((N+M)·D) states, where D is the number of edits, so a 10-word change in a 44 KB document stays in the microsecond-to-millisecond range. The last row is Myers' honest worst case (D ≈ N+M): still ahead, but only just — if you routinely diff completely unrelated inputs, no shortest-edit-script algorithm will save you.
+
+## How it works
+
+1. **Tokenize** the inputs (`word`, `char`, or `line`).
+2. **Intern** every distinct token into a dense integer id — the entire search then runs over two `Int32Array`s, never touching strings.
+3. **Strip** common prefix/suffix in O(N).
+4. **Myers middle-snake search**: forward and backward D-paths meet in the middle, recursing on the two halves — O((N+M)·D) time, O(N+M) space, with both direction-state arrays allocated exactly once.
+5. **Rebuild** merged `equal`/`delete`/`insert` entries from the changed-token flags.
+
+## Demo
+
+```sh
+npm run build
+open demo/index.html
+```
+
+## Development
+
+```sh
+npm test          # node:test — unit + 1,100 fuzz round-trips + 300 optimality checks
+npm run typecheck
+npm run build     # tsup → ESM + CJS + IIFE + .d.ts
+npm run bench     # requires npm run build first
 ```
 
 ## References
 
-- **Myer's Diff Algorithm**:
-  - [A technique for isolating differences between files](http://portal.acm.org/citation.cfm?doid=359460.359467)
-  - [An Algorithm for Differential File Comparison](https://www.cs.dartmouth.edu/~doug/diff.pdf)
-- **Diff-match-patch**:
-  - [Google's diff-match-patch library](https://github.com/google/diff-match-patch)
-- **Pre-diff speedups and post-diff cleanups**:
-  - [Neil Fraser's writing on diff](https://neil.fraser.name/writing/diff/)
-- **Hirschberg Algorithm**:
-  - [Algorithms for the Longest Common Subsequence Problem](https://dl.acm.org/doi/pdf/10.1145/322033.322044)
-  - [Optimal Sequence Alignment Algorithm Using Space Division Technique](https://scienceon.kisti.re.kr/commons/util/originalView.do?cn=JAKO200727543156559&oCn=JAKO200727543156559&dbt=JAKO&journal=NJOU00291531&keyword=%EC%B5%9C%EC%A0%81%20%EC%84%9C%EC%97%B4%EC%A0%95%EB%A0%AC)
+- Myers, E. W. — [An O(ND) Difference Algorithm and Its Variations](http://www.xmailserver.org/diff2.pdf) (1986)
+- Hunt & McIlroy — [An Algorithm for Differential File Comparison](https://www.cs.dartmouth.edu/~doug/diff.pdf)
+- Neil Fraser — [Diff Strategies](https://neil.fraser.name/writing/diff/)
+- Google — [diff-match-patch](https://github.com/google/diff-match-patch)
 
-## Contributing
+## License
 
-Welcome contributions to improve this tool! Here are some ways you can help:
-
-- Reporting issues
-- Adding new features
-- Improving documentation
-
-To contribute:
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Create a new Pull Request
-
-## Contact
-
-For any inquiries, please contact [krkarma777@gmail.com](mailto:krkarma777@gmail.com) or open an issue on GitHub.
+[MIT](LICENSE)
