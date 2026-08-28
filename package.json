@@ -1,6 +1,6 @@
 {
   "name": "@krkarma777/string-diff",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fast text diff and string comparison for JavaScript/TypeScript — Myers O(ND) shortest edit script on typed arrays. Word, character, and line diff modes, Unicode-safe (Korean/CJK/emoji), zero dependencies, works in Node and browsers.",
   "type": "module",
   "main": "./dist/index.cjs",
