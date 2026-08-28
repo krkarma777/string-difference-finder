@@ -1,10 +1,9 @@
 // Benchmark: legacy Hirschberg LCS vs Myers O(ND), same inputs.
 // Usage: npm run build && node bench/bench.mjs
 //
-// Fairness note: the legacy implementation receives pre-tokenized arrays
-// (tokenization excluded from its timing), while the new diff() is timed
-// including tokenization + interning. The handicap goes against the new
-// implementation, so speedups are not inflated.
+// Both sides are timed end-to-end from raw strings: the legacy pipeline is
+// splitIntoTokens + legacyDiff (exactly what the old web app executed), the
+// new pipeline is diff() including tokenization and interning.
 import { performance } from 'node:perf_hooks';
 import { splitIntoTokens, legacyDiff } from './legacy-hirschberg.mjs';
 import { diff } from '../dist/index.js';
@@ -77,6 +76,17 @@ const scenarios = [];
   });
 }
 {
+  const base = makeText(rng, 8000);
+  const mid = Math.floor(base.length / 2);
+  scenarios.push({
+    name: 'large text (~44 KB), one clustered edit',
+    a: base,
+    b: base.slice(0, mid) + ' REPLACED SECTION HERE ' + base.slice(mid + 40),
+    legacyRuns: 3,
+    newRuns: 100,
+  });
+}
+{
   scenarios.push({
     name: 'completely different medium text (~8 KB)',
     a: makeText(rng, 1500),
@@ -90,10 +100,9 @@ console.log(`node ${process.version}\n`);
 console.log('| scenario | legacy Hirschberg LCS | Myers (this package) | speedup |');
 console.log('|---|---|---|---|');
 for (const s of scenarios) {
-  const tokensA = splitIntoTokens(s.a);
-  const tokensB = splitIntoTokens(s.b);
-  const legacyMs = await measure(() => legacyDiff(tokensA, tokensB), s.legacyRuns);
+  const legacyMs = await measure(() => legacyDiff(splitIntoTokens(s.a), splitIntoTokens(s.b)), s.legacyRuns);
   const myersMs = await measure(() => diff(s.a, s.b), s.newRuns);
   const speedup = legacyMs / myersMs;
-  console.log(`| ${s.name} | ${legacyMs.toFixed(1)} ms | ${myersMs.toFixed(2)} ms | **${speedup.toFixed(0)}×** |`);
+  const speedupLabel = speedup >= 10 ? speedup.toFixed(0) : speedup.toFixed(1);
+  console.log(`| ${s.name} | ${legacyMs.toFixed(1)} ms | ${myersMs.toFixed(2)} ms | **${speedupLabel}×** |`);
 }
