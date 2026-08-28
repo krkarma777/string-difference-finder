@@ -97,10 +97,10 @@ Against the popular npm diff libraries — [`diff` (jsdiff)](https://www.npmjs.c
 
 | scenario | string-diff | jsdiff | diff-match-patch (default) | diff-match-patch (exact) | fast-myers-diff |
 |---|---|---|---|---|---|
-| word diff, 44 KB text, 10 edits | **1.24 ms** | 0.82 ms (0.7×) | — | — | 0.73 ms (0.6×) |
-| char diff, 44 KB text, 10 edits | **0.59 ms** | 1.32 ms (2.2×) | 0.36 ms (0.6×) | 0.31 ms (0.5×) | 2.12 ms (3.6×) |
-| line diff, 44 KB text, 10 changed lines | **0.33 ms** | 0.15 ms (0.4×) | — | — | 0.28 ms (0.9×) |
-| char diff, ~8 KB completely different (worst case) | **227 ms** | 2,317 ms (10.2×) | 657 ms (2.9×) | 674 ms (3.0×) | 584 ms (2.6×) |
+| word diff, 44 KB text, 10 edits | **0.97 ms** | 0.89 ms (0.9×) | — | — | 0.84 ms (0.9×) |
+| char diff, 44 KB text, 10 edits | **0.62 ms** | 1.38 ms (2.2×) | 0.34 ms (0.5×) | 0.31 ms (0.5×) | 2.23 ms (3.6×) |
+| line diff, 44 KB text, 10 changed lines | **0.27 ms** | 0.14 ms (0.5×) | — | — | 0.25 ms (1.0×) |
+| char diff, ~8 KB completely different (worst case) | **233 ms** | 2,360 ms (10.1×) | 727 ms (3.1×) | 664 ms (2.9×) | 603 ms (2.6×) |
 
 How to read this honestly:
 
@@ -113,11 +113,11 @@ Notes for fairness are in [`bench/compare.mjs`](bench/compare.mjs). For history:
 
 ## How it works
 
-1. **Tokenize** the inputs (`word`, `char`, or `line`).
-2. **Strip** the common token prefix/suffix in O(N) *before* anything else, so a localized edit in a large document skips nearly all downstream work.
-3. **Intern** the remaining tokens into dense integer ids — the entire search then runs over two `Int32Array`s, never touching strings. (`char` mode skips tokens and interning entirely: it scans code points straight into an `Int32Array` — the code point *is* the id — and every output text is a single slice of the original input.)
+1. **Scan, don't tokenize**: one pass over each input records token boundary offsets and a per-token FNV-1a hash (`word`: Unicode-property class runs, `line`: terminator-attached lines, `char`: the code point itself is the id) — no token substrings are ever materialized.
+2. **Strip** the common token prefix/suffix, filtering with integer hash comparisons, so a localized edit in a large document skips nearly all downstream work.
+3. **Intern** the remaining tokens into dense integer ids with an open-addressed hash table that reads characters straight out of the originals — the entire search then runs over two `Int32Array`s, never touching strings.
 4. **Myers middle-snake search**: forward and backward D-paths meet in the middle, recursing on the two halves — O((N+M)·D) time, O(N+M) space, with both direction-state arrays allocated exactly once.
-5. **Rebuild** merged `equal`/`delete`/`insert` entries from the changed-token flags.
+5. **Rebuild** merged `equal`/`delete`/`insert` entries from the changed-token flags; every output text is a single `slice` of the original input.
 
 ## Demo
 

@@ -1,6 +1,7 @@
 import { tokenize, type DiffMode } from './tokenize.ts';
 import { myersDiff } from './myers.ts';
 import { diffChars } from './chars.ts';
+import { diffScanned } from './scan.ts';
 
 export { tokenize, type DiffMode };
 
@@ -29,7 +30,7 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
   }
   const mode = options.mode ?? 'word';
   if (mode === 'char') return diffChars(a, b);
-  return diffTokens(tokenize(a, mode), tokenize(b, mode));
+  return diffScanned(a, b, mode);
 }
 
 /** Diffs two pre-tokenized sequences. Tokens are compared by exact string equality. */
