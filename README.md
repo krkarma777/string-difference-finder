@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![types](https://img.shields.io/badge/types-included-blue.svg)
 
-Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, or line** and get the guaranteed-shortest edit script (`equal` / `insert` / `delete`), powered by **Myers' O(ND) algorithm** on typed arrays. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~1.9 KB min+gzip in the browser.
+Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, or line** and get the guaranteed-shortest edit script (`equal` / `insert` / `delete`), powered by **Myers' O(ND) algorithm** on typed arrays. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 KB min+gzip in the browser.
 
 Use it for text comparison UIs, document revision history, editor change tracking, test output diffing, or anywhere you need to highlight the difference between two strings — in Node.js or any browser.
 
@@ -14,7 +14,7 @@ Use it for text comparison UIs, document revision history, editor change trackin
 - **Shortest edit script, guaranteed** — the exact Myers algorithm with the linear-space divide-and-conquer refinement (the same family git uses). No heuristic cutoffs; output is verified optimal against a reference DP in the test suite.
 - **Extreme constant-factor tuning** — every token is interned to an integer once, so the hot loops compare `Int32Array` elements instead of strings; search state lives in two preallocated typed-array scratch buffers reused across the whole recursion (zero GC pressure); common prefixes/suffixes are stripped in O(N).
 - **Unicode-aware tokenization** — `word` mode splits on Unicode letter/digit properties, so Korean, Japanese, and other non-ASCII scripts diff by word instead of collapsing into one opaque blob. `char` mode is code-point safe (no surrogate splitting).
-- **Fully synchronous, zero dependencies** — no worker gymnastics, no async overhead. ~4.7 KB ESM, ~1.9 KB min+gzip browser bundle.
+- **Fully synchronous, zero dependencies** — no worker gymnastics, no async overhead. ~2.9 KB min+gzip browser bundle.
 
 ## Install
 
