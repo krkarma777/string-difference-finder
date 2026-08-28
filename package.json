@@ -1,0 +1,59 @@
+{
+  "name": "@krkarma777/string-diff",
+  "version": "1.0.0",
+  "description": "Blazing-fast text diff powered by Myers' O(ND) algorithm with token interning and typed arrays. Zero dependencies.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "bench": "node bench/bench.mjs",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "diff",
+    "myers",
+    "text-diff",
+    "string-comparison",
+    "lcs",
+    "shortest-edit-script",
+    "unicode",
+    "typed-arrays",
+    "zero-dependencies"
+  ],
+  "author": "krkarma777",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krkarma777/string-difference-finder.git"
+  },
+  "homepage": "https://github.com/krkarma777/string-difference-finder#readme",
+  "bugs": {
+    "url": "https://github.com/krkarma777/string-difference-finder/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
