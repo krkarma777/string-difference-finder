@@ -1,9 +1,12 @@
 # @krkarma777/string-diff
 
 [![npm version](https://img.shields.io/npm/v/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/%40krkarma777%2Fstring-diff)](https://bundlephobia.com/package/@krkarma777/string-diff)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![types](https://img.shields.io/badge/types-included-blue.svg)
+[![weekly downloads](https://img.shields.io/npm/dw/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
+[![total downloads](https://badgen.net/npm/dt/@krkarma777/string-diff?label=total%20downloads)](https://npm-stat.com/charts.html?package=%40krkarma777%2Fstring-diff)
+[![minzipped size](https://img.shields.io/badge/min%2Bgzip-2.9%20kB-blue)](#how-it-works)
+[![dependencies](https://img.shields.io/badge/dependencies-0-blue)](package.json)
+[![types](https://img.shields.io/badge/types-included-blue)](dist/index.d.ts)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, or line** and get the guaranteed-shortest edit script (`equal` / `insert` / `delete`), powered by **Myers' O(ND) algorithm** on typed arrays. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 KB min+gzip in the browser.
 
@@ -135,6 +138,10 @@ npm run build         # tsup → ESM + CJS + IIFE + .d.ts
 npm run bench         # vs jsdiff / diff-match-patch / fast-myers-diff (build first)
 npm run bench:legacy  # vs the original Hirschberg LCS implementation
 ```
+
+## Contributing
+
+Issues and pull requests are welcome. Please run `npm run typecheck && npm test` before opening a PR — the suite includes fuzz round-trips and optimality checks against a reference implementation, so a passing run is a strong signal the change is safe.
 
 ## References
 
