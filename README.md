@@ -70,13 +70,24 @@ Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
 
 | option | type | default | description |
 |---|---|---|---|
-| `mode` | `'word' \| 'char' \| 'line'` | `'word'` | tokenization granularity |
+| `mode` | `'word' \| 'char' \| 'line' \| 'intl-word' \| 'grapheme'` | `'word'` | tokenization granularity |
+| `locale` | `string \| string[]` | runtime locale | BCP 47 locale(s) for the `Intl.Segmenter` modes |
 | `refine` | `boolean` | `false` | re-diff each delete/insert pair one level finer (`line`→word, `word`→char), e.g. `quick`→`quicker` reports just `+er` |
 | `heuristic` | `boolean` | `false` | cap the search cost like git does, keeping pathological inputs fast (the 227 ms worst case below drops to ~8 ms, +8% edit-script size); output stays identical to exact mode while the edit distance is small |
 
 - `word` — runs of Unicode letters/digits/underscore, whitespace runs, symbol runs
 - `char` — individual code points (surrogate-pair safe)
 - `line` — lines with their terminators attached
+- `intl-word` — locale-aware words via `Intl.Segmenter`: splits unspaced scripts (Japanese, Chinese, Thai) that `word` mode sees as one token
+
+  ```ts
+  diff('私は猫が好きです', '私は犬が好きです', { mode: 'intl-word', locale: 'ja' });
+  // equal '私は' · delete '猫' · insert '犬' · equal 'が好きです'
+  ```
+
+- `grapheme` — grapheme clusters via `Intl.Segmenter`: ZWJ emoji (👨‍👩‍👧) and combining sequences stay whole where `char` mode would split code points
+
+The `Intl.Segmenter` modes are opt-in because they're slower than the scanner modes; they throw a clear `TypeError` on runtimes without `Intl.Segmenter` (Node < 16, older browsers).
 
 ### `diffRanges(a, b, options?)`
 

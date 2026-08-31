@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `intl-word` and `grapheme` modes via `Intl.Segmenter` (with a `locale`
+  option): locale-aware word diffs for unspaced scripts (Japanese, Chinese,
+  Thai) and cluster-safe character diffs (ZWJ emoji, combining sequences).
+  `refine` drops `intl-word` pairs to grapheme granularity. (#15)
+
 ## [1.1.0] - 2026-08-31
 
 ### Added
