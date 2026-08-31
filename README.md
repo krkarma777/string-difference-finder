@@ -11,7 +11,7 @@
 
 Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, or line** and get the guaranteed-shortest edit script (`equal` / `insert` / `delete`), powered by **Myers' O(ND) algorithm** on typed arrays. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 KB min+gzip in the browser.
 
-Use it for text comparison UIs, document revision history, editor change tracking, test output diffing, or anywhere you need to highlight the difference between two strings — in Node.js or any browser.
+Use it for text comparison UIs, document revision history, editor change tracking, test output diffing, or anywhere you need to highlight the difference between two strings — in Node.js or any browser. **[Try the live demo.](https://krkarma777.github.io/string-difference-finder/)**
 
 ## Features
 
@@ -127,8 +127,12 @@ Notes for fairness are in [`bench/compare.mjs`](bench/compare.mjs). For history:
 
 ## Demo
 
+Hosted: **[krkarma777.github.io/string-difference-finder](https://krkarma777.github.io/string-difference-finder/)** (deployed from `master` by CI).
+
+Locally:
+
 ```sh
-npm run build
+npm run demo
 open demo/index.html
 ```
 

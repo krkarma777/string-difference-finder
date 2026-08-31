@@ -68,6 +68,18 @@
     border-radius: 8px;
     font-size: 13px;
   }
+  label.opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  label.opt input { accent-color: var(--accent); }
   #time { color: var(--muted); font-size: 13px; }
   #result {
     background: var(--panel);
@@ -109,13 +121,15 @@
       <option value="char">char</option>
       <option value="line">line</option>
     </select>
+    <label class="opt"><input type="checkbox" id="refine"> refine</label>
+    <label class="opt"><input type="checkbox" id="heuristic"> heuristic</label>
     <span id="time"></span>
   </div>
 
   <div id="result"><span class="empty">Press Compare to see the diff.</span></div>
 </main>
 
-<script src="../dist/string-diff.min.js"></script>
+<script src="./string-diff.min.js"></script>
 <script>
   const $ = id => document.getElementById(id);
 
@@ -123,9 +137,11 @@
     const a = $('a').value;
     const b = $('b').value;
     const mode = $('mode').value;
+    const refine = $('refine').checked;
+    const heuristic = $('heuristic').checked;
 
     const t0 = performance.now();
-    const entries = StringDiff.diff(a, b, { mode });
+    const entries = StringDiff.diff(a, b, { mode, refine, heuristic });
     const elapsed = performance.now() - t0;
 
     const result = $('result');
