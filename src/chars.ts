@@ -10,7 +10,7 @@ import { pushEntry, type DiffEntry } from './entries.ts';
  * the original input. Common prefix/suffix are stripped at the code-unit
  * level first, so untouched regions skip the scan entirely.
  */
-export function diffChars(a: string, b: string): DiffEntry[] {
+export function diffChars(a: string, b: string, heuristic = false): DiffEntry[] {
   const aLen = a.length;
   const bLen = b.length;
   const minLen = aLen < bLen ? aLen : bLen;
@@ -28,7 +28,7 @@ export function diffChars(a: string, b: string): DiffEntry[] {
 
   const aMid = scanCodePoints(a, prefix, aLen - suffix);
   const bMid = scanCodePoints(b, prefix, bLen - suffix);
-  const { changedA, changedB } = myersDiff(aMid.points, bMid.points);
+  const { changedA, changedB } = myersDiff(aMid.points, bMid.points, heuristic);
 
   const entries: DiffEntry[] = [];
   if (prefix > 0) entries.push({ operation: 'equal', text: a.slice(0, prefix) });
