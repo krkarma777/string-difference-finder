@@ -7,8 +7,16 @@ import { pushEntry, type DiffEntry, type DiffOperation } from './entries.ts';
 export { tokenize, type DiffMode, type DiffEntry, type DiffOperation };
 
 export interface DiffOptions {
-  /** Tokenization granularity. Defaults to 'word'. */
+  /**
+   * Tokenization granularity. Defaults to 'word'. The scanner modes
+   * ('word' | 'char' | 'line') are the fastest; 'intl-word' and 'grapheme'
+   * use Intl.Segmenter for locale-aware word boundaries (unspaced scripts
+   * like Japanese/Chinese/Thai) and cluster-safe characters (ZWJ emoji,
+   * combining sequences).
+   */
   mode?: DiffMode;
+  /** BCP 47 locale(s) for the Intl.Segmenter modes. Defaults to the runtime locale. */
+  locale?: string | string[];
   /**
    * Re-diffs each delete/insert pair one granularity finer ('line' pairs by
    * word, 'word' pairs by char), so replacing "quick" with "quicker" reports
@@ -45,12 +53,27 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
   }
   const mode = options.mode ?? 'word';
   const heuristic = options.heuristic === true;
-  const entries = mode === 'char' ? diffChars(a, b, heuristic) : diffScanned(a, b, mode, heuristic);
-  if (options.refine === true && mode !== 'char') {
-    return refineEntries(entries, mode === 'line' ? 'word' : 'char', heuristic);
+  let entries: DiffEntry[];
+  if (mode === 'char') {
+    entries = diffChars(a, b, heuristic);
+  } else if (mode === 'intl-word' || mode === 'grapheme') {
+    entries = diffTokens(tokenize(a, mode, options.locale), tokenize(b, mode, options.locale), { heuristic });
+  } else {
+    entries = diffScanned(a, b, mode, heuristic);
+  }
+  const finer = REFINE_TARGET[mode];
+  if (options.refine === true && finer !== undefined) {
+    return refineEntries(entries, finer, heuristic, options.locale);
   }
   return entries;
 }
+
+/** Which granularity a refine pass drops to; char/grapheme are already finest. */
+const REFINE_TARGET: Partial<Record<DiffMode, DiffMode>> = {
+  line: 'word',
+  word: 'char',
+  'intl-word': 'grapheme',
+};
 
 /**
  * A changed region as code-unit offsets into the inputs:
@@ -95,13 +118,15 @@ export function diffRanges(a: string, b: string, options: DiffOptions = {}): Dif
 }
 
 /** Re-diffs adjacent delete/insert pairs at a finer granularity. */
-function refineEntries(entries: DiffEntry[], finerMode: DiffMode, heuristic: boolean): DiffEntry[] {
+function refineEntries(
+  entries: DiffEntry[], finerMode: DiffMode, heuristic: boolean, locale?: string | string[],
+): DiffEntry[] {
   const out: DiffEntry[] = [];
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const next = entries[i + 1];
     if (entry.operation === 'delete' && next !== undefined && next.operation === 'insert') {
-      for (const sub of diff(entry.text, next.text, { mode: finerMode, heuristic })) {
+      for (const sub of diff(entry.text, next.text, { mode: finerMode, heuristic, locale })) {
         pushEntry(out, sub.operation, sub.text);
       }
       i++;
