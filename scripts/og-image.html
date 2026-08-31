@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!--
+  Source for demo/og-image.png (GitHub social preview + og:image).
+  Regenerate with:
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
+      --screenshot=demo/og-image.png --window-size=1280,640 --force-device-scale-factor=2 \
+      scripts/og-image.html
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --border: #2a2f3d;
+    --text: #e6e9f0;
+    --muted: #8b91a3;
+    --accent: #6ea8fe;
+    --del-bg: rgba(248, 81, 73, 0.22);
+    --del-text: #ffa198;
+    --ins-bg: rgba(63, 185, 80, 0.22);
+    --ins-text: #7ee787;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(110, 168, 254, 0.14), transparent 65%),
+      radial-gradient(700px 400px at -5% 110%, rgba(63, 185, 80, 0.10), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    padding: 72px 84px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .pkg {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 26px;
+    color: var(--accent);
+  }
+  h1 {
+    font-size: 78px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+  .sample {
+    display: inline-block;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 30px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 32px;
+    align-self: flex-start;
+  }
+  .sample .del { background: var(--del-bg); color: var(--del-text); text-decoration: line-through; border-radius: 6px; padding: 2px 6px; }
+  .sample .ins { background: var(--ins-bg); color: var(--ins-text); border-radius: 6px; padding: 2px 6px; }
+  .sample .ms { color: var(--muted); font-size: 24px; margin-left: 18px; }
+  .chips { display: flex; gap: 16px; }
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 12px 26px;
+    font-size: 24px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="pkg">@krkarma777/string-diff</div>
+  <h1>Fast text diff for<br>JavaScript &amp; TypeScript</h1>
+  <div class="sample">the <span class="del">quick</span> <span class="ins">slow</span> fox — 안녕하세요 <span class="del">👋</span> <span class="ins">🌍</span><span class="ms">diff in 0.03 ms</span></div>
+  <div class="chips">
+    <div class="chip"><strong>Myers O(ND)</strong>&nbsp;exact</div>
+    <div class="chip"><strong>0</strong>&nbsp;dependencies</div>
+    <div class="chip"><strong>~2.9 kB</strong>&nbsp;min+gzip</div>
+    <div class="chip"><strong>Unicode-safe</strong>&nbsp;· CJK · emoji</div>
+  </div>
+</body>
+</html>
