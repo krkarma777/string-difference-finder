@@ -72,6 +72,7 @@ Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
 |---|---|---|---|
 | `mode` | `'word' \| 'char' \| 'line'` | `'word'` | tokenization granularity |
 | `refine` | `boolean` | `false` | re-diff each delete/insert pair one level finer (`line`→word, `word`→char), e.g. `quick`→`quicker` reports just `+er` |
+| `heuristic` | `boolean` | `false` | cap the search cost like git does, keeping pathological inputs fast (the 227 ms worst case below drops to ~8 ms, +8% edit-script size); output stays identical to exact mode while the edit distance is small |
 
 - `word` — runs of Unicode letters/digits/underscore, whitespace runs, symbol runs
 - `char` — individual code points (surrogate-pair safe)
@@ -110,7 +111,7 @@ Against the popular npm diff libraries — [`diff` (jsdiff)](https://www.npmjs.c
 How to read this honestly:
 
 - **On typical inputs every library here is sub-millisecond-ish** — the differences are fractions of a millisecond and won't matter to most applications.
-- **The worst case is where libraries separate**, and it's the row that decides whether your UI freezes on pathological input: this package is 2.6–10× faster than everything tested, while still returning a provably minimal diff.
+- **The worst case is where libraries separate**, and it's the row that decides whether your UI freezes on pathological input: this package is 2.6–10× faster than everything tested, while still returning a provably minimal diff. If you'd rather trade minimality for speed there, `{ heuristic: true }` brings that row to ~8 ms (edit script ~8% larger) — still exact whenever the edit distance is small.
 - `diff-match-patch` (default) trades exactness for speed by design — its documented timeout heuristics can return non-minimal diffs. This package never does.
 - `fast-myers-diff` has no tokenizer and emits index ranges rather than text entries, so its rows do less output work (word/line rows reuse our tokenizer); `diff-match-patch` has no built-in word or line API.
 

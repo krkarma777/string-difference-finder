@@ -16,6 +16,20 @@ export interface DiffOptions {
    * effect in 'char' mode. Defaults to false.
    */
   refine?: boolean;
+  /**
+   * Caps the search cost per subproblem (the git xdiff strategy) so that
+   * pathological inputs — two large, almost entirely different strings —
+   * stay fast instead of costing O((N+M)·D). The result is always a valid
+   * diff but is no longer guaranteed minimal; while the edit distance is
+   * under the cap (64+), output is identical to exact mode. Defaults to
+   * false (exact, provably minimal).
+   */
+  heuristic?: boolean;
+}
+
+export interface DiffTokensOptions {
+  /** See {@link DiffOptions.heuristic}. */
+  heuristic?: boolean;
 }
 
 /**
@@ -30,21 +44,22 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
     return a.length === 0 ? [] : [{ operation: 'equal', text: a }];
   }
   const mode = options.mode ?? 'word';
-  const entries = mode === 'char' ? diffChars(a, b) : diffScanned(a, b, mode);
+  const heuristic = options.heuristic === true;
+  const entries = mode === 'char' ? diffChars(a, b, heuristic) : diffScanned(a, b, mode, heuristic);
   if (options.refine === true && mode !== 'char') {
-    return refineEntries(entries, mode === 'line' ? 'word' : 'char');
+    return refineEntries(entries, mode === 'line' ? 'word' : 'char', heuristic);
   }
   return entries;
 }
 
 /** Re-diffs adjacent delete/insert pairs at a finer granularity. */
-function refineEntries(entries: DiffEntry[], finerMode: DiffMode): DiffEntry[] {
+function refineEntries(entries: DiffEntry[], finerMode: DiffMode, heuristic: boolean): DiffEntry[] {
   const out: DiffEntry[] = [];
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const next = entries[i + 1];
     if (entry.operation === 'delete' && next !== undefined && next.operation === 'insert') {
-      for (const sub of diff(entry.text, next.text, { mode: finerMode })) {
+      for (const sub of diff(entry.text, next.text, { mode: finerMode, heuristic })) {
         pushEntry(out, sub.operation, sub.text);
       }
       i++;
@@ -56,7 +71,9 @@ function refineEntries(entries: DiffEntry[], finerMode: DiffMode): DiffEntry[] {
 }
 
 /** Diffs two pre-tokenized sequences. Tokens are compared by exact string equality. */
-export function diffTokens(aTokens: readonly string[], bTokens: readonly string[]): DiffEntry[] {
+export function diffTokens(
+  aTokens: readonly string[], bTokens: readonly string[], options: DiffTokensOptions = {},
+): DiffEntry[] {
   const n = aTokens.length;
   const m = bTokens.length;
   const minLen = n < m ? n : m;
@@ -72,7 +89,7 @@ export function diffTokens(aTokens: readonly string[], bTokens: readonly string[
   const ids = new Map<string, number>();
   const ia = internRange(aTokens, prefix, n - suffix, ids);
   const ib = internRange(bTokens, prefix, m - suffix, ids);
-  const mid = myersDiff(ia, ib);
+  const mid = myersDiff(ia, ib, options.heuristic === true);
 
   const changedA = new Uint8Array(n);
   const changedB = new Uint8Array(m);

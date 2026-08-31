@@ -11,7 +11,7 @@ import { pushEntry, type DiffEntry } from './entries.ts';
  * equivalence classes are exactly those of tokenize()+diffTokens(), so the
  * result is identical — this only removes allocation and hashing overhead.
  */
-export function diffScanned(a: string, b: string, mode: 'word' | 'line'): DiffEntry[] {
+export function diffScanned(a: string, b: string, mode: 'word' | 'line', heuristic = false): DiffEntry[] {
   const scanA = mode === 'word' ? scanWordTokens(a) : scanLineTokens(a);
   const scanB = mode === 'word' ? scanWordTokens(b) : scanLineTokens(b);
   const offA = scanA.offsets;
@@ -45,7 +45,7 @@ export function diffScanned(a: string, b: string, mode: 'word' | 'line'): DiffEn
     a, offA, hashA, prefix, countA - suffix,
     b, offB, hashB, prefix, countB - suffix,
   );
-  const { changedA, changedB } = myersDiff(ia, ib);
+  const { changedA, changedB } = myersDiff(ia, ib, heuristic);
 
   const entries: DiffEntry[] = [];
   if (prefix > 0) entries.push({ operation: 'equal', text: a.slice(0, offA[prefix]) });

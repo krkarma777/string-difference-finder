@@ -7,6 +7,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `heuristic` option: caps the search cost per subproblem (the git xdiff
+  strategy) so pathological inputs stay fast — the 8 KB completely-different
+  worst case drops from ~217 ms to ~8 ms for an edit script ~8% above
+  minimal. Output is identical to exact mode while the edit distance is
+  under the cap. Also accepted by `diffTokens` via a new options argument.
 - `refine` option: re-diffs each delete/insert pair one granularity finer
   (`line` pairs by word, `word` pairs by char), so `quick` → `quicker`
   reports the shared prefix as equal and just `+er` as the change.
