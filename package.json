@@ -23,11 +23,22 @@
   "scripts": {
     "build": "tsup",
     "test": "node --test test/*.test.ts",
+    "test:coverage": "c8 npm test",
     "typecheck": "tsc --noEmit",
     "demo": "npm run build && cp dist/string-diff.min.js demo/",
     "bench": "node bench/compare.mjs",
     "bench:legacy": "node bench/bench.mjs",
+    "perf:smoke": "node scripts/perf-smoke.mjs",
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "c8": {
+    "include": ["src/**"],
+    "checkCoverage": true,
+    "statements": 97,
+    "branches": 92,
+    "functions": 99,
+    "lines": 97,
+    "reporter": ["text"]
   },
   "keywords": [
     "diff",
@@ -71,6 +82,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
+    "c8": "^12.0.0",
     "diff": "^9.0.0",
     "diff-match-patch": "^1.0.5",
     "fast-myers-diff": "^3.2.0",

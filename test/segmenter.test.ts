@@ -81,6 +81,18 @@ test('segmenter modes: round-trip fuzz with mixed scripts', () => {
   }
 });
 
+test('segmenter modes: clear error when Intl.Segmenter is unavailable', () => {
+  const original = Intl.Segmenter;
+  // Simulate an old runtime (Node < 16 / older browsers).
+  (Intl as { Segmenter?: unknown }).Segmenter = undefined;
+  try {
+    assert.throws(() => tokenize('abc', 'grapheme'), /requires Intl\.Segmenter/);
+    assert.throws(() => diff('a', 'b', { mode: 'intl-word' }), /requires Intl\.Segmenter/);
+  } finally {
+    (Intl as { Segmenter?: unknown }).Segmenter = original;
+  }
+});
+
 test('segmenter modes: heuristic flag composes', () => {
   const a = '猫'.repeat(200) + '好き'.repeat(200);
   const b = '犬'.repeat(180) + '嫌い'.repeat(180);
