@@ -52,6 +52,48 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
   return entries;
 }
 
+/**
+ * A changed region as code-unit offsets into the inputs:
+ * a[aStart, aEnd) was replaced by b[bStart, bEnd). Either side (but never
+ * both) may be empty, representing a pure insertion or deletion.
+ */
+export type DiffRange = [aStart: number, aEnd: number, bStart: number, bEnd: number];
+
+/**
+ * Computes the changed regions between two strings as offset ranges instead
+ * of text entries — convenient for editors, highlighters, and any consumer
+ * that wants to slice the originals itself. Equivalent to projecting the
+ * entries of diff(a, b, options) onto string offsets.
+ */
+export function diffRanges(a: string, b: string, options: DiffOptions = {}): DiffRange[] {
+  const entries = diff(a, b, options);
+  const ranges: DiffRange[] = [];
+  let aPos = 0;
+  let bPos = 0;
+  let i = 0;
+  while (i < entries.length) {
+    const entry = entries[i];
+    if (entry.operation === 'equal') {
+      aPos += entry.text.length;
+      bPos += entry.text.length;
+      i++;
+      continue;
+    }
+    const aStart = aPos;
+    const bStart = bPos;
+    if (entries[i] !== undefined && entries[i].operation === 'delete') {
+      aPos += entries[i].text.length;
+      i++;
+    }
+    if (entries[i] !== undefined && entries[i].operation === 'insert') {
+      bPos += entries[i].text.length;
+      i++;
+    }
+    ranges.push([aStart, aPos, bStart, bPos]);
+  }
+  return ranges;
+}
+
 /** Re-diffs adjacent delete/insert pairs at a finer granularity. */
 function refineEntries(entries: DiffEntry[], finerMode: DiffMode, heuristic: boolean): DiffEntry[] {
   const out: DiffEntry[] = [];

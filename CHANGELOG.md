@@ -4,9 +4,14 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-08-31
 
 ### Added
+- `diffRanges(a, b, options?)`: the diff as `[aStart, aEnd, bStart, bEnd]`
+  code-unit offset tuples instead of text entries, for editors and
+  highlighters that slice the originals themselves.
+- Hosted demo at <https://krkarma777.github.io/string-difference-finder/>,
+  deployed from `master` by CI, with controls for the new options.
 - `heuristic` option: caps the search cost per subproblem (the git xdiff
   strategy) so pathological inputs stay fast — the 8 KB completely-different
   worst case drops from ~217 ms to ~8 ms for an edit script ~8% above

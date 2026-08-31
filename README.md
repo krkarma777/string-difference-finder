@@ -78,9 +78,18 @@ Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
 - `char` — individual code points (surrogate-pair safe)
 - `line` — lines with their terminators attached
 
-### `diffTokens(aTokens, bTokens)`
+### `diffRanges(a, b, options?)`
 
-Lower-level API: diff two pre-tokenized `string[]` sequences with any tokenization you like.
+The same diff as offset tuples instead of text entries — for editors, highlighters, and anyone who wants to slice the originals themselves. Each `[aStart, aEnd, bStart, bEnd]` says `a[aStart, aEnd)` was replaced by `b[bStart, bEnd)` (either side may be empty for pure insertions/deletions; offsets are UTF-16 code units).
+
+```ts
+diffRanges('the quick fox', 'the slow fox');
+// [[4, 9, 4, 8]]  — "quick" → "slow"
+```
+
+### `diffTokens(aTokens, bTokens, options?)`
+
+Lower-level API: diff two pre-tokenized `string[]` sequences with any tokenization you like (`options.heuristic` supported).
 
 ### `tokenize(text, mode?)`
 
