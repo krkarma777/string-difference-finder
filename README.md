@@ -1,6 +1,7 @@
 # @krkarma777/string-diff
 
 [![npm version](https://img.shields.io/npm/v/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
+[![CI](https://img.shields.io/github/actions/workflow/status/krkarma777/string-difference-finder/ci.yml?branch=master&label=CI)](https://github.com/krkarma777/string-difference-finder/actions/workflows/ci.yml)
 [![weekly downloads](https://img.shields.io/npm/dw/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
 [![total downloads](https://badgen.net/npm/dt/@krkarma777/string-diff?label=total%20downloads)](https://npm-stat.com/charts.html?package=%40krkarma777%2Fstring-diff)
 [![minzipped size](https://img.shields.io/badge/min%2Bgzip-2.9%20kB-blue)](#how-it-works)
