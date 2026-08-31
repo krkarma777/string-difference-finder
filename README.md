@@ -1,7 +1,7 @@
 # @krkarma777/string-diff
 
 [![npm version](https://img.shields.io/npm/v/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
-[![CI](https://img.shields.io/github/actions/workflow/status/krkarma777/string-difference-finder/ci.yml?branch=master&label=CI)](https://github.com/krkarma777/string-difference-finder/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/krkarma777/string-diff/ci.yml?branch=master&label=CI)](https://github.com/krkarma777/string-diff/actions/workflows/ci.yml)
 [![weekly downloads](https://img.shields.io/npm/dw/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
 [![total downloads](https://badgen.net/npm/dt/@krkarma777/string-diff?label=total%20downloads)](https://npm-stat.com/charts.html?package=%40krkarma777%2Fstring-diff)
 [![minzipped size](https://img.shields.io/badge/min%2Bgzip-2.9%20kB-blue)](#how-it-works)
@@ -11,7 +11,7 @@
 
 Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, or line** and get the guaranteed-shortest edit script (`equal` / `insert` / `delete`), powered by **Myers' O(ND) algorithm** on typed arrays. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 KB min+gzip in the browser.
 
-Use it for text comparison UIs, document revision history, editor change tracking, test output diffing, or anywhere you need to highlight the difference between two strings — in Node.js or any browser. **[Try the live demo.](https://krkarma777.github.io/string-difference-finder/)**
+Use it for text comparison UIs, document revision history, editor change tracking, test output diffing, or anywhere you need to highlight the difference between two strings — in Node.js or any browser. **[Try the live demo.](https://krkarma777.github.io/string-diff/)**
 
 ## Features
 
@@ -136,7 +136,7 @@ Notes for fairness are in [`bench/compare.mjs`](bench/compare.mjs). For history:
 
 ## Demo
 
-Hosted: **[krkarma777.github.io/string-difference-finder](https://krkarma777.github.io/string-difference-finder/)** (deployed from `master` by CI).
+Hosted: **[krkarma777.github.io/string-diff](https://krkarma777.github.io/string-diff/)** (deployed from `master` by CI).
 
 Locally:
 

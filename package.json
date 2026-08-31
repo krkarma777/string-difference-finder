@@ -60,11 +60,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/krkarma777/string-difference-finder.git"
+    "url": "git+https://github.com/krkarma777/string-diff.git"
   },
-  "homepage": "https://github.com/krkarma777/string-difference-finder#readme",
+  "homepage": "https://github.com/krkarma777/string-diff#readme",
   "bugs": {
-    "url": "https://github.com/krkarma777/string-difference-finder/issues"
+    "url": "https://github.com/krkarma777/string-diff/issues"
   },
   "publishConfig": {
     "access": "public"
