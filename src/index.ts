@@ -2,19 +2,20 @@ import { tokenize, type DiffMode } from './tokenize.ts';
 import { myersDiff } from './myers.ts';
 import { diffChars } from './chars.ts';
 import { diffScanned } from './scan.ts';
+import { pushEntry, type DiffEntry, type DiffOperation } from './entries.ts';
 
-export { tokenize, type DiffMode };
-
-export type DiffOperation = 'equal' | 'insert' | 'delete';
-
-export interface DiffEntry {
-  operation: DiffOperation;
-  text: string;
-}
+export { tokenize, type DiffMode, type DiffEntry, type DiffOperation };
 
 export interface DiffOptions {
   /** Tokenization granularity. Defaults to 'word'. */
   mode?: DiffMode;
+  /**
+   * Re-diffs each delete/insert pair one granularity finer ('line' pairs by
+   * word, 'word' pairs by char), so replacing "quick" with "quicker" reports
+   * the shared "quick" as equal instead of replacing the whole word. No
+   * effect in 'char' mode. Defaults to false.
+   */
+  refine?: boolean;
 }
 
 /**
@@ -29,8 +30,29 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
     return a.length === 0 ? [] : [{ operation: 'equal', text: a }];
   }
   const mode = options.mode ?? 'word';
-  if (mode === 'char') return diffChars(a, b);
-  return diffScanned(a, b, mode);
+  const entries = mode === 'char' ? diffChars(a, b) : diffScanned(a, b, mode);
+  if (options.refine === true && mode !== 'char') {
+    return refineEntries(entries, mode === 'line' ? 'word' : 'char');
+  }
+  return entries;
+}
+
+/** Re-diffs adjacent delete/insert pairs at a finer granularity. */
+function refineEntries(entries: DiffEntry[], finerMode: DiffMode): DiffEntry[] {
+  const out: DiffEntry[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const next = entries[i + 1];
+    if (entry.operation === 'delete' && next !== undefined && next.operation === 'insert') {
+      for (const sub of diff(entry.text, next.text, { mode: finerMode })) {
+        pushEntry(out, sub.operation, sub.text);
+      }
+      i++;
+    } else {
+      pushEntry(out, entry.operation, entry.text);
+    }
+  }
+  return out;
 }
 
 /** Diffs two pre-tokenized sequences. Tokens are compared by exact string equality. */

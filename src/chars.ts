@@ -1,5 +1,5 @@
 import { myersDiff } from './myers.ts';
-import type { DiffEntry, DiffOperation } from './index.ts';
+import { pushEntry, type DiffEntry } from './entries.ts';
 
 /**
  * Char-mode diff that never materializes per-character token strings.
@@ -75,13 +75,6 @@ function scanCodePoints(str: string, from: number, to: number): CodePointScan {
   }
   offsets[count] = to;
   return { points: count === size ? points : points.subarray(0, count), offsets, count };
-}
-
-/** Appends an entry, merging with the previous one when the operation matches. */
-function pushEntry(entries: DiffEntry[], operation: DiffOperation, text: string): void {
-  const last = entries[entries.length - 1];
-  if (last !== undefined && last.operation === operation) last.text += text;
-  else entries.push({ operation, text });
 }
 
 function isHighSurrogate(unit: number): boolean {

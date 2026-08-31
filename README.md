@@ -71,6 +71,7 @@ Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
 | option | type | default | description |
 |---|---|---|---|
 | `mode` | `'word' \| 'char' \| 'line'` | `'word'` | tokenization granularity |
+| `refine` | `boolean` | `false` | re-diff each delete/insert pair one level finer (`line`→word, `word`→char), e.g. `quick`→`quicker` reports just `+er` |
 
 - `word` — runs of Unicode letters/digits/underscore, whitespace runs, symbol runs
 - `char` — individual code points (surrogate-pair safe)

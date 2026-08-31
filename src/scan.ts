@@ -1,5 +1,5 @@
 import { myersDiff } from './myers.ts';
-import type { DiffEntry, DiffOperation } from './index.ts';
+import { pushEntry, type DiffEntry } from './entries.ts';
 
 /**
  * Fused scan pipeline for word/line modes: instead of materializing token
@@ -74,13 +74,6 @@ export function diffScanned(a: string, b: string, mode: 'word' | 'line'): DiffEn
 
   if (suffix > 0) pushEntry(entries, 'equal', a.slice(offA[countA - suffix]));
   return entries;
-}
-
-/** Appends an entry, merging with the previous one when the operation matches. */
-function pushEntry(entries: DiffEntry[], operation: DiffOperation, text: string): void {
-  const last = entries[entries.length - 1];
-  if (last !== undefined && last.operation === operation) last.text += text;
-  else entries.push({ operation, text });
 }
 
 function rangesEqual(a: string, as: number, ae: number, b: string, bs: number, be: number): boolean {
