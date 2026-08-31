@@ -74,6 +74,10 @@ Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
 | `locale` | `string \| string[]` | runtime locale | BCP 47 locale(s) for the `Intl.Segmenter` modes |
 | `refine` | `boolean` | `false` | re-diff each delete/insert pair one level finer (`line`→word, `word`→char), e.g. `quick`→`quicker` reports just `+er` |
 | `heuristic` | `boolean` | `false` | cap the search cost like git does, keeping pathological inputs fast (the 227 ms worst case below drops to ~8 ms, +8% edit-script size); output stays identical to exact mode while the edit distance is small |
+| `ignoreCase` | `boolean` | `false` | compare tokens case-insensitively |
+| `ignoreWhitespace` | `boolean` | `false` | whitespace runs compare equal (`line` mode: lines compared trimmed); whitespace with no counterpart still diffs |
+
+With `ignoreCase`/`ignoreWhitespace`, `equal` texts are taken from `b`, so concatenating non-`delete` texts reproduces `b` exactly; `a`-side reconstruction holds only up to the ignored differences.
 
 - `word` — runs of Unicode letters/digits/underscore, whitespace runs, symbol runs
 - `char` — individual code points (surrogate-pair safe)
@@ -100,7 +104,7 @@ diffRanges('the quick fox', 'the slow fox');
 
 ### `diffTokens(aTokens, bTokens, options?)`
 
-Lower-level API: diff two pre-tokenized `string[]` sequences with any tokenization you like (`options.heuristic` supported).
+Lower-level API: diff two pre-tokenized `string[]` sequences with any tokenization you like (`heuristic`, `ignoreCase`, and `ignoreWhitespace` supported).
 
 ### `tokenize(text, mode?)`
 
