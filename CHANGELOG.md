@@ -7,6 +7,9 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `refine` option: re-diffs each delete/insert pair one granularity finer
+  (`line` pairs by word, `word` pairs by char), so `quick` → `quicker`
+  reports the shared prefix as equal and just `+er` as the change.
 - CI workflow: full test suite on Node 24 plus a compatibility matrix that
   smoke-tests the built ESM/CJS output on Node 16/18/20/22, backing the
   `engines: >=16` claim with an actual run.
