@@ -11,6 +11,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
   option): locale-aware word diffs for unspaced scripts (Japanese, Chinese,
   Thai) and cluster-safe character diffs (ZWJ emoji, combining sequences).
   `refine` drops `intl-word` pairs to grapheme granularity. (#15)
+- `ignoreCase` and `ignoreWhitespace` options on `diff` and `diffTokens`:
+  masked differences compare equal, with `equal` texts taken from `b` so
+  non-delete concatenation always reproduces `b`. In `line` mode
+  `ignoreWhitespace` compares trimmed lines; elsewhere whitespace runs
+  match each other but presence still matters. (#16)
 
 ## [1.1.0] - 2026-08-31
 

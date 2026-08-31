@@ -33,11 +33,30 @@ export interface DiffOptions {
    * false (exact, provably minimal).
    */
   heuristic?: boolean;
+  /**
+   * Compares tokens case-insensitively. When tokens differ only in ways an
+   * ignore option masks, the equal entry's text is taken from `b`, so
+   * concatenating non-delete texts always reproduces `b` (but not
+   * necessarily `a`). Defaults to false.
+   */
+  ignoreCase?: boolean;
+  /**
+   * Treats whitespace differences as equal: in 'line' mode lines are
+   * compared with leading/trailing whitespace trimmed; in other modes any
+   * whitespace-only token matches any other. Presence still matters — a
+   * whitespace token with no counterpart remains an insert/delete. Same
+   * `b`-side text rule as ignoreCase. Defaults to false.
+   */
+  ignoreWhitespace?: boolean;
 }
 
 export interface DiffTokensOptions {
   /** See {@link DiffOptions.heuristic}. */
   heuristic?: boolean;
+  /** See {@link DiffOptions.ignoreCase}. */
+  ignoreCase?: boolean;
+  /** Whitespace-only tokens compare equal. See {@link DiffOptions.ignoreWhitespace}. */
+  ignoreWhitespace?: boolean;
 }
 
 /**
@@ -53,17 +72,22 @@ export function diff(a: string, b: string, options: DiffOptions = {}): DiffEntry
   }
   const mode = options.mode ?? 'word';
   const heuristic = options.heuristic === true;
+  const normalize = buildNormalizer(mode, options.ignoreCase === true, options.ignoreWhitespace === true);
   let entries: DiffEntry[];
-  if (mode === 'char') {
+  if (normalize !== null || mode === 'intl-word' || mode === 'grapheme') {
+    // Generic token pipeline: needed for Segmenter tokens and whenever
+    // token comparison is normalized.
+    entries = diffTokensCore(
+      tokenize(a, mode, options.locale), tokenize(b, mode, options.locale), heuristic, normalize,
+    );
+  } else if (mode === 'char') {
     entries = diffChars(a, b, heuristic);
-  } else if (mode === 'intl-word' || mode === 'grapheme') {
-    entries = diffTokens(tokenize(a, mode, options.locale), tokenize(b, mode, options.locale), { heuristic });
   } else {
     entries = diffScanned(a, b, mode, heuristic);
   }
   const finer = REFINE_TARGET[mode];
   if (options.refine === true && finer !== undefined) {
-    return refineEntries(entries, finer, heuristic, options.locale);
+    return refineEntries(entries, finer, options);
   }
   return entries;
 }
@@ -118,15 +142,20 @@ export function diffRanges(a: string, b: string, options: DiffOptions = {}): Dif
 }
 
 /** Re-diffs adjacent delete/insert pairs at a finer granularity. */
-function refineEntries(
-  entries: DiffEntry[], finerMode: DiffMode, heuristic: boolean, locale?: string | string[],
-): DiffEntry[] {
+function refineEntries(entries: DiffEntry[], finerMode: DiffMode, options: DiffOptions): DiffEntry[] {
+  const subOptions: DiffOptions = {
+    mode: finerMode,
+    heuristic: options.heuristic,
+    locale: options.locale,
+    ignoreCase: options.ignoreCase,
+    ignoreWhitespace: options.ignoreWhitespace,
+  };
   const out: DiffEntry[] = [];
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const next = entries[i + 1];
     if (entry.operation === 'delete' && next !== undefined && next.operation === 'insert') {
-      for (const sub of diff(entry.text, next.text, { mode: finerMode, heuristic, locale })) {
+      for (const sub of diff(entry.text, next.text, subOptions)) {
         pushEntry(out, sub.operation, sub.text);
       }
       i++;
@@ -141,28 +170,62 @@ function refineEntries(
 export function diffTokens(
   aTokens: readonly string[], bTokens: readonly string[], options: DiffTokensOptions = {},
 ): DiffEntry[] {
+  const normalize = buildNormalizer(null, options.ignoreCase === true, options.ignoreWhitespace === true);
+  return diffTokensCore(aTokens, bTokens, options.heuristic === true, normalize);
+}
+
+type Normalizer = (token: string) => string;
+
+const WS_ONLY = /^\s+$/;
+
+/**
+ * Builds the token normalizer for the ignore options, or null when tokens
+ * compare verbatim. 'line' mode compares trimmed lines; other modes (and
+ * caller-supplied tokens, mode = null) equate whitespace-only tokens.
+ */
+function buildNormalizer(mode: DiffMode | null, ignoreCase: boolean, ignoreWhitespace: boolean): Normalizer | null {
+  if (!ignoreCase && !ignoreWhitespace) return null;
+  return token => {
+    let t = token;
+    if (ignoreWhitespace) {
+      if (mode === 'line') t = t.trim();
+      else if (WS_ONLY.test(t)) t = ' ';
+    }
+    if (ignoreCase) t = t.toLowerCase();
+    return t;
+  };
+}
+
+function diffTokensCore(
+  aTokens: readonly string[], bTokens: readonly string[],
+  heuristic: boolean, normalize: Normalizer | null,
+): DiffEntry[] {
   const n = aTokens.length;
   const m = bTokens.length;
   const minLen = n < m ? n : m;
 
   // Strip common affixes before interning so the Map only ever sees the
   // changed region — for a localized edit this skips almost all hashing.
+  // With a normalizer the ids already encode normalized equality, so the
+  // Myers walk handles affixes and the verbatim pre-strip is skipped.
   let prefix = 0;
-  while (prefix < minLen && aTokens[prefix] === bTokens[prefix]) prefix++;
   let suffix = 0;
-  const maxSuffix = minLen - prefix;
-  while (suffix < maxSuffix && aTokens[n - 1 - suffix] === bTokens[m - 1 - suffix]) suffix++;
+  if (normalize === null) {
+    while (prefix < minLen && aTokens[prefix] === bTokens[prefix]) prefix++;
+    const maxSuffix = minLen - prefix;
+    while (suffix < maxSuffix && aTokens[n - 1 - suffix] === bTokens[m - 1 - suffix]) suffix++;
+  }
 
   const ids = new Map<string, number>();
-  const ia = internRange(aTokens, prefix, n - suffix, ids);
-  const ib = internRange(bTokens, prefix, m - suffix, ids);
-  const mid = myersDiff(ia, ib, options.heuristic === true);
+  const ia = internRange(aTokens, prefix, n - suffix, ids, normalize);
+  const ib = internRange(bTokens, prefix, m - suffix, ids, normalize);
+  const mid = myersDiff(ia, ib, heuristic);
 
   const changedA = new Uint8Array(n);
   const changedB = new Uint8Array(m);
   changedA.set(mid.changedA, prefix);
   changedB.set(mid.changedB, prefix);
-  return buildEntries(aTokens, bTokens, changedA, changedB);
+  return buildEntries(aTokens, bTokens, changedA, changedB, normalize !== null);
 }
 
 /**
@@ -170,11 +233,12 @@ export function diffTokens(
  * Int32Array elements instead of hashing/comparing strings.
  */
 function internRange(
-  tokens: readonly string[], start: number, end: number, ids: Map<string, number>,
+  tokens: readonly string[], start: number, end: number,
+  ids: Map<string, number>, normalize: Normalizer | null,
 ): Int32Array {
   const out = new Int32Array(end - start);
   for (let i = start; i < end; i++) {
-    const token = tokens[i];
+    const token = normalize === null ? tokens[i] : normalize(tokens[i]);
     let id = ids.get(token);
     if (id === undefined) {
       id = ids.size;
@@ -188,6 +252,7 @@ function internRange(
 function buildEntries(
   aTokens: readonly string[], bTokens: readonly string[],
   changedA: Uint8Array, changedB: Uint8Array,
+  equalFromB: boolean,
 ): DiffEntry[] {
   const entries: DiffEntry[] = [];
   const n = aTokens.length;
@@ -195,10 +260,14 @@ function buildEntries(
   let i = 0;
   let j = 0;
   while (i < n || j < m) {
-    const eqStart = i;
+    const eqStartA = i;
+    const eqStartB = j;
     while (i < n && j < m && changedA[i] === 0 && changedB[j] === 0) { i++; j++; }
-    if (i > eqStart) {
-      entries.push({ operation: 'equal', text: joinRange(aTokens, eqStart, i) });
+    if (i > eqStartA) {
+      // Under an ignore option the paired tokens may differ in masked ways;
+      // taking b's text guarantees non-delete concatenation reproduces b.
+      const text = equalFromB ? joinRange(bTokens, eqStartB, j) : joinRange(aTokens, eqStartA, i);
+      entries.push({ operation: 'equal', text });
     }
     const delStart = i;
     while (i < n && changedA[i] === 1) i++;
