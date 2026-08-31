@@ -24,6 +24,7 @@
     "build": "tsup",
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
+    "demo": "npm run build && cp dist/string-diff.min.js demo/",
     "bench": "node bench/compare.mjs",
     "bench:legacy": "node bench/bench.mjs",
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
