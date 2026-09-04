@@ -168,6 +168,13 @@ Notes for fairness are in [`bench/compare.mjs`](bench/compare.mjs). For history:
 
 Hosted: **[krkarma777.github.io/string-diff](https://krkarma777.github.io/string-diff/)** (deployed from `master` by CI).
 
+### Prefilled examples
+
+- [Korean word replacement](https://krkarma777.github.io/string-diff/#a=%EC%95%88%EB%85%95%ED%95%98%EC%84%B8%EC%9A%94+%EC%84%B8%EA%B3%84&b=%EC%95%88%EB%85%95%ED%95%98%EC%84%B8%EC%9A%94+%EC%A7%80%EA%B5%AC&mode=word)
+- [Japanese locale-aware words](https://krkarma777.github.io/string-diff/#a=%E7%A7%81%E3%81%AF%E7%8C%AB%E3%81%8C%E5%A5%BD%E3%81%8D%E3%81%A7%E3%81%99&b=%E7%A7%81%E3%81%AF%E7%8A%AC%E3%81%8C%E5%A5%BD%E3%81%8D%E3%81%A7%E3%81%99&mode=intl-word&locale=ja)
+- [Grapheme-safe family emoji](https://krkarma777.github.io/string-diff/#a=Family%3A+%F0%9F%91%A8%E2%80%8D%F0%9F%91%A9%E2%80%8D%F0%9F%91%A7&b=Family%3A+%F0%9F%91%A8%E2%80%8D%F0%9F%91%A9%E2%80%8D%F0%9F%91%A6&mode=grapheme)
+- [Ignore case and whitespace](https://krkarma777.github.io/string-diff/#a=Hello%2C+++WORLD%21%0ANext+line&b=hello%2C+WORLD%21%0ANext+line&mode=word&ignoreCase=1&ignoreWhitespace=1)
+
 Locally:
 
 ```sh
