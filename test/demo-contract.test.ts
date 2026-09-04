@@ -40,6 +40,27 @@ test('demo contract: loads state before wiring every option into diff', () => {
   assert.ok(html.includes('summarizeEntries(entries)'));
 });
 
+test('demo contract: oversized shared state waits for an explicit comparison', () => {
+  assert.match(
+    html,
+    /const \{[^}]*shouldAutoRender[^}]*\} = StringDiffDemoState;/,
+    'shouldAutoRender must be loaded from the demo-only state API',
+  );
+  assert.match(
+    html,
+    /const sharedState = hasSharedState \? decodeState\(location\.hash\) : null;/,
+    'decoded shared state must be retained for the automatic-render decision',
+  );
+  assert.match(
+    html,
+    /if \(shouldAutoRender\(sharedState\)\) \{\s*render\(false\);\s*\} else \{/,
+    'automatic render must be guarded without restricting explicit Compare clicks',
+  );
+  assert.ok(html.includes(
+    'This shared comparison is too large to run automatically. Press Compare to run it.',
+  ));
+});
+
 test('demo contract: retains responsive single-column behavior', () => {
   assert.match(html, /@media \(max-width: 640px\)/);
   assert.match(html, /\.inputs\s*\{\s*grid-template-columns:\s*1fr;/);

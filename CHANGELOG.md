@@ -9,6 +9,9 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - The hosted demo now exposes every v1.2 diff mode and option, restores comparisons from shareable URL hashes, and reports entry and changed-range counts alongside timing.
 
+### Changed
+- Shared demo comparisons over 16,000 combined input code units now wait for an explicit Compare click instead of running automatically.
+
 ## [1.2.0] - 2026-08-31
 
 ### Added

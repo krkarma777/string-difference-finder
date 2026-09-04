@@ -28,9 +28,11 @@ interface DemoStats {
 }
 
 interface DemoStateApi {
+  AUTO_RENDER_INPUT_LIMIT: number;
   DEFAULT_STATE: Readonly<DemoState>;
   encodeState(state: DemoState): string;
   decodeState(hash: string): DemoState;
+  shouldAutoRender(state: DemoState): boolean;
   summarizeEntries(entries: DemoEntry[]): DemoStats;
 }
 
@@ -102,6 +104,29 @@ test('demo state: invalid modes and boolean spellings fall back safely', () => {
 test('demo state: false flags and empty locale are omitted deterministically', () => {
   const api = loadApi();
   assert.equal(api.encodeState({ ...expectedDefault, a: '', b: '' }), 'a=&b=&mode=word');
+});
+
+test('demo state: automatic rendering allows exactly 16,000 input code units', () => {
+  const api = loadApi();
+  const state = {
+    ...expectedDefault,
+    a: 'a'.repeat(8_000),
+    b: 'b'.repeat(8_000),
+  };
+
+  assert.equal(api.AUTO_RENDER_INPUT_LIMIT, 16_000);
+  assert.equal(api.shouldAutoRender(state), true);
+});
+
+test('demo state: automatic rendering rejects 16,001 input code units', () => {
+  const api = loadApi();
+  const state = {
+    ...expectedDefault,
+    a: 'a'.repeat(8_000),
+    b: 'b'.repeat(8_001),
+  };
+
+  assert.equal(api.shouldAutoRender(state), false);
 });
 
 test('demo stats: empty and equal-only results contain no changed ranges', () => {

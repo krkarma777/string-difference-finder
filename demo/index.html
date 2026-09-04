@@ -255,7 +255,7 @@
 <script src="./string-diff.min.js"></script>
 <script src="./state.js"></script>
 <script>
-  const { DEFAULT_STATE, decodeState, encodeState, summarizeEntries } = StringDiffDemoState;
+  const { DEFAULT_STATE, decodeState, encodeState, shouldAutoRender, summarizeEntries } = StringDiffDemoState;
   const $ = id => document.getElementById(id);
   const SEGMENTER_MODES = new Set(['intl-word', 'grapheme']);
 
@@ -355,8 +355,16 @@
   $('compare').addEventListener('click', () => render(true));
 
   const hasSharedState = location.hash.length > 1;
-  applyState(hasSharedState ? decodeState(location.hash) : DEFAULT_STATE);
-  if (hasSharedState) render(false);
+  const sharedState = hasSharedState ? decodeState(location.hash) : null;
+  applyState(sharedState ?? DEFAULT_STATE);
+  if (sharedState) {
+    if (shouldAutoRender(sharedState)) {
+      render(false);
+    } else {
+      $('error').textContent = 'This shared comparison is too large to run automatically. Press Compare to run it.';
+      $('error').hidden = false;
+    }
+  }
 </script>
 </body>
 </html>

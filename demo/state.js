@@ -2,6 +2,7 @@
   'use strict';
 
   const VALID_MODES = new Set(['word', 'char', 'line', 'intl-word', 'grapheme']);
+  const AUTO_RENDER_INPUT_LIMIT = 16_000;
 
   const DEFAULT_STATE = Object.freeze({
     a: "committer_list_per_month[date + '-' + log[i].author] = 1;",
@@ -44,6 +45,10 @@
     };
   }
 
+  function shouldAutoRender(state) {
+    return state.a.length + state.b.length <= AUTO_RENDER_INPUT_LIMIT;
+  }
+
   function summarizeEntries(entries) {
     let changedEntryCount = 0;
     let rangeCount = 0;
@@ -69,9 +74,11 @@
   }
 
   root.StringDiffDemoState = Object.freeze({
+    AUTO_RENDER_INPUT_LIMIT,
     DEFAULT_STATE,
     encodeState,
     decodeState,
+    shouldAutoRender,
     summarizeEntries,
   });
 })(globalThis);
