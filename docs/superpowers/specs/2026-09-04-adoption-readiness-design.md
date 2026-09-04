@@ -1,8 +1,14 @@
 # Adoption Readiness Design
 
-**Date:** 2026-09-04  
-**Status:** Awaiting written-spec review  
+**Date:** 2026-09-04
+**Status:** Approved
 **Repository:** `@krkarma777/string-diff`
+
+**Implementation plans:**
+
+- [`2026-09-04-repository-readiness.md`](../plans/2026-09-04-repository-readiness.md)
+- [`2026-09-04-shareable-demo.md`](../plans/2026-09-04-shareable-demo.md)
+- [`2026-09-04-adoption-documentation.md`](../plans/2026-09-04-adoption-documentation.md)
 
 ## Decision
 
