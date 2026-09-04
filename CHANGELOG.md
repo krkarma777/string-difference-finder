@@ -11,6 +11,7 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - Shared demo comparisons over 16,000 combined input code units now wait for an explicit Compare click instead of running automatically.
+- Corrected adopter-facing metadata and emitted API documentation to cover all five modes, exact-by-default behavior, the optional non-minimal heuristic, zero dependencies, the current ~3.9 kB min+gzip browser size, and range normalization caveats.
 
 ## [1.2.0] - 2026-08-31
 
