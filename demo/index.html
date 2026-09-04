@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Text Diff Tool — Compare Two Strings Online | string-diff</title>
-<meta name="description" content="Compare two strings by word, character, or line — differences highlighted instantly. Built on @krkarma777/string-diff, a fast, zero-dependency Myers diff library for JavaScript & TypeScript.">
+<meta name="description" content="Compare two strings by word, character, line, locale-aware word, or grapheme — differences highlighted instantly. Built on @krkarma777/string-diff, a fast, zero-dependency Myers diff library for JavaScript & TypeScript.">
 <link rel="canonical" href="https://krkarma777.github.io/string-diff/">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <meta name="theme-color" content="#0f1117">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="string-diff">
 <meta property="og:title" content="string-diff — Fast Text Diff & String Comparison for JS/TS">
-<meta property="og:description" content="Compare two strings by word, character, or line — Myers O(ND) shortest edit script, zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 kB min+gzip.">
+<meta property="og:description" content="Compare strings by word, character, line, locale-aware word, or grapheme — Myers O(ND), zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 kB min+gzip.">
 <meta property="og:url" content="https://krkarma777.github.io/string-diff/">
 <meta property="og:image" content="https://krkarma777.github.io/string-diff/og-image.png">
 <meta property="og:image:width" content="2560">
@@ -31,7 +31,7 @@
   "name": "string-diff",
   "alternateName": "@krkarma777/string-diff",
   "url": "https://krkarma777.github.io/string-diff/",
-  "description": "Online text diff tool that compares two strings by word, character, or line using the Myers O(ND) shortest edit script algorithm. Zero dependencies, Unicode-safe.",
+  "description": "Online text diff tool that compares two strings by word, character, line, locale-aware word, or grapheme using the Myers O(ND) shortest edit script algorithm. Zero dependencies, Unicode-safe.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "browserRequirements": "Requires JavaScript",
@@ -72,7 +72,15 @@
   h1 code { color: var(--accent); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   p.sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
   .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 640px) { .inputs { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    .inputs { grid-template-columns: 1fr; }
+    .primary-controls { align-items: stretch; }
+    .primary-controls > button,
+    .primary-controls > .field { width: 100%; }
+    .primary-controls select,
+    .primary-controls input[type="text"] { width: 100%; }
+    .primary-controls #locale { width: 100%; }
+  }
   label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
   textarea {
     width: 100%;
@@ -88,7 +96,27 @@
     resize: vertical;
   }
   textarea:focus { outline: none; border-color: var(--accent); }
-  .controls { display: flex; align-items: center; gap: 12px; margin: 16px 0 24px; flex-wrap: wrap; }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .control-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .primary-controls { align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+  .field > span {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .options {
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
   button {
     padding: 10px 22px;
     background: var(--accent);
@@ -100,27 +128,51 @@
     cursor: pointer;
   }
   button:hover { filter: brightness(1.1); }
-  select {
+  select,
+  input[type="text"] {
     padding: 9px 10px;
     background: var(--panel);
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 8px;
+    font: inherit;
     font-size: 13px;
   }
+  select:focus,
+  input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  input[type="text"]:disabled { color: var(--muted); opacity: 0.65; }
+  #locale { width: 120px; }
   label.opt {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 13px;
     color: var(--muted);
+    font-size: 13px;
     text-transform: none;
     letter-spacing: 0;
     margin: 0;
     cursor: pointer;
   }
   label.opt input { accent-color: var(--accent); }
-  #time { color: var(--muted); font-size: 13px; }
+  .status {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .error {
+    margin: 0 0 8px;
+    padding: 10px 12px;
+    color: var(--del-text);
+    background: var(--del-bg);
+    border: 1px solid var(--del-text);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  [hidden] { display: none !important; }
   #result {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -145,7 +197,7 @@
 <body>
 <main>
   <h1><code>@krkarma777/string-diff</code> demo</h1>
-  <p class="sub">Compare two strings by word, character, or line — Myers O(ND) shortest-edit-script diff · typed arrays · zero dependencies</p>
+  <p class="sub">Compare strings by word, character, line, locale-aware word, or grapheme · exact Myers diff · zero dependencies</p>
 
   <div class="inputs">
     <div>
@@ -159,17 +211,38 @@
   </div>
 
   <div class="controls">
-    <button id="compare">Compare</button>
-    <select id="mode">
-      <option value="word" selected>word</option>
-      <option value="char">char</option>
-      <option value="line">line</option>
-    </select>
-    <label class="opt"><input type="checkbox" id="refine"> refine</label>
-    <label class="opt"><input type="checkbox" id="heuristic"> heuristic</label>
-    <span id="time"></span>
+    <div class="control-group primary-controls">
+      <button id="compare" type="button">Compare</button>
+      <label class="field" for="mode">
+        <span>Mode</span>
+        <select id="mode">
+          <option value="word" selected>word</option>
+          <option value="char">char</option>
+          <option value="line">line</option>
+          <option value="intl-word">intl-word</option>
+          <option value="grapheme">grapheme</option>
+        </select>
+      </label>
+      <label class="field" for="locale">
+        <span>Locale</span>
+        <input id="locale" type="text" placeholder="runtime default" autocomplete="off" disabled>
+      </label>
+    </div>
+    <div class="control-group options" role="group" aria-label="Diff options">
+      <label class="opt"><input type="checkbox" id="refine"> refine</label>
+      <label class="opt"><input type="checkbox" id="heuristic"> heuristic</label>
+      <label class="opt"><input type="checkbox" id="ignore-case"> ignore case</label>
+      <label class="opt"><input type="checkbox" id="ignore-whitespace"> ignore whitespace</label>
+    </div>
   </div>
 
+  <div id="status" class="status" role="status" aria-live="polite" hidden>
+    <span id="time"></span>
+    <span id="entry-count"></span>
+    <span id="changed-entry-count"></span>
+    <span id="range-count"></span>
+  </div>
+  <div id="error" class="error" role="alert" hidden></div>
   <div id="result"><span class="empty">Press Compare to see the diff.</span></div>
 
   <footer>
@@ -180,39 +253,110 @@
 </main>
 
 <script src="./string-diff.min.js"></script>
+<script src="./state.js"></script>
 <script>
+  const { DEFAULT_STATE, decodeState, encodeState, summarizeEntries } = StringDiffDemoState;
   const $ = id => document.getElementById(id);
+  const SEGMENTER_MODES = new Set(['intl-word', 'grapheme']);
 
-  function render() {
-    const a = $('a').value;
-    const b = $('b').value;
-    const mode = $('mode').value;
-    const refine = $('refine').checked;
-    const heuristic = $('heuristic').checked;
-
-    const t0 = performance.now();
-    const entries = StringDiff.diff(a, b, { mode, refine, heuristic });
-    const elapsed = performance.now() - t0;
-
-    const result = $('result');
-    result.textContent = '';
-    if (entries.length === 0) {
-      const span = document.createElement('span');
-      span.className = 'empty';
-      span.textContent = 'Both strings are empty.';
-      result.appendChild(span);
-    }
-    for (const entry of entries) {
-      const span = document.createElement('span');
-      if (entry.operation === 'delete') span.className = 'del';
-      else if (entry.operation === 'insert') span.className = 'ins';
-      span.textContent = entry.text;
-      result.appendChild(span);
-    }
-    $('time').textContent = `diff computed in ${elapsed.toFixed(2)} ms`;
+  function syncLocaleControl() {
+    $('locale').disabled = !SEGMENTER_MODES.has($('mode').value);
   }
 
-  $('compare').addEventListener('click', render);
+  function applyState(state) {
+    $('a').value = state.a;
+    $('b').value = state.b;
+    $('mode').value = state.mode;
+    $('locale').value = state.locale;
+    $('refine').checked = state.refine;
+    $('heuristic').checked = state.heuristic;
+    $('ignore-case').checked = state.ignoreCase;
+    $('ignore-whitespace').checked = state.ignoreWhitespace;
+    syncLocaleControl();
+  }
+
+  function readState() {
+    return {
+      a: $('a').value,
+      b: $('b').value,
+      mode: $('mode').value,
+      locale: $('locale').value.trim(),
+      refine: $('refine').checked,
+      heuristic: $('heuristic').checked,
+      ignoreCase: $('ignore-case').checked,
+      ignoreWhitespace: $('ignore-whitespace').checked,
+    };
+  }
+
+  function buildOptions(state) {
+    const options = {
+      mode: state.mode,
+      refine: state.refine,
+      heuristic: state.heuristic,
+      ignoreCase: state.ignoreCase,
+      ignoreWhitespace: state.ignoreWhitespace,
+    };
+    if (state.locale !== '') options.locale = state.locale;
+    return options;
+  }
+
+  function replaceHash(state) {
+    const hash = `#${encodeState(state)}`;
+    try {
+      history.replaceState(null, '', hash);
+    } catch {
+      location.hash = hash;
+    }
+  }
+
+  function render(updateUrl = true) {
+    const state = readState();
+    const result = $('result');
+
+    try {
+      const options = buildOptions(state);
+      const t0 = performance.now();
+      const entries = StringDiff.diff(state.a, state.b, options);
+      const elapsed = performance.now() - t0;
+      const stats = summarizeEntries(entries);
+
+      result.textContent = '';
+      if (entries.length === 0) {
+        const span = document.createElement('span');
+        span.className = 'empty';
+        span.textContent = 'Both strings are empty.';
+        result.appendChild(span);
+      }
+      for (const entry of entries) {
+        const span = document.createElement('span');
+        if (entry.operation === 'delete') span.className = 'del';
+        else if (entry.operation === 'insert') span.className = 'ins';
+        span.textContent = entry.text;
+        result.appendChild(span);
+      }
+
+      $('time').textContent = `${elapsed.toFixed(2)} ms`;
+      $('entry-count').textContent = `${stats.entryCount} ${stats.entryCount === 1 ? 'entry' : 'entries'}`;
+      $('changed-entry-count').textContent = `${stats.changedEntryCount} changed`;
+      $('range-count').textContent = `${stats.rangeCount} ${stats.rangeCount === 1 ? 'range' : 'ranges'}`;
+      $('status').hidden = false;
+      $('error').hidden = true;
+      $('error').textContent = '';
+      if (updateUrl) replaceHash(state);
+    } catch (caught) {
+      result.textContent = '';
+      $('status').hidden = true;
+      $('error').textContent = caught instanceof Error ? caught.message : String(caught);
+      $('error').hidden = false;
+    }
+  }
+
+  $('mode').addEventListener('change', syncLocaleControl);
+  $('compare').addEventListener('click', () => render(true));
+
+  const hasSharedState = location.hash.length > 1;
+  applyState(hasSharedState ? decodeState(location.hash) : DEFAULT_STATE);
+  if (hasSharedState) render(false);
 </script>
 </body>
 </html>

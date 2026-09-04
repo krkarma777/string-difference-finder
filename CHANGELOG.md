@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- The hosted demo now exposes every v1.2 diff mode and option, restores comparisons from shareable URL hashes, and reports entry and changed-range counts alongside timing.
+
 ## [1.2.0] - 2026-08-31
 
 ### Added
