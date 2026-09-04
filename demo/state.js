@@ -44,9 +44,34 @@
     };
   }
 
+  function summarizeEntries(entries) {
+    let changedEntryCount = 0;
+    let rangeCount = 0;
+    let insideChange = false;
+
+    for (const entry of entries) {
+      if (entry.operation === 'equal') {
+        insideChange = false;
+        continue;
+      }
+      changedEntryCount++;
+      if (!insideChange) {
+        rangeCount++;
+        insideChange = true;
+      }
+    }
+
+    return {
+      entryCount: entries.length,
+      changedEntryCount,
+      rangeCount,
+    };
+  }
+
   root.StringDiffDemoState = Object.freeze({
     DEFAULT_STATE,
     encodeState,
     decodeState,
+    summarizeEntries,
   });
 })(globalThis);

@@ -16,10 +16,22 @@ interface DemoState {
   ignoreWhitespace: boolean;
 }
 
+interface DemoEntry {
+  operation: 'equal' | 'insert' | 'delete';
+  text: string;
+}
+
+interface DemoStats {
+  entryCount: number;
+  changedEntryCount: number;
+  rangeCount: number;
+}
+
 interface DemoStateApi {
   DEFAULT_STATE: Readonly<DemoState>;
   encodeState(state: DemoState): string;
   decodeState(hash: string): DemoState;
+  summarizeEntries(entries: DemoEntry[]): DemoStats;
 }
 
 const expectedDefault: DemoState = {
@@ -90,4 +102,61 @@ test('demo state: invalid modes and boolean spellings fall back safely', () => {
 test('demo state: false flags and empty locale are omitted deterministically', () => {
   const api = loadApi();
   assert.equal(api.encodeState({ ...expectedDefault, a: '', b: '' }), 'a=&b=&mode=word');
+});
+
+test('demo stats: empty and equal-only results contain no changed ranges', () => {
+  const api = loadApi();
+  assert.deepEqual({ ...api.summarizeEntries([]) }, {
+    entryCount: 0,
+    changedEntryCount: 0,
+    rangeCount: 0,
+  });
+  assert.deepEqual({ ...api.summarizeEntries([{ operation: 'equal', text: 'same' }]) }, {
+    entryCount: 1,
+    changedEntryCount: 0,
+    rangeCount: 0,
+  });
+});
+
+test('demo stats: a pure insertion or deletion is one changed range', () => {
+  const api = loadApi();
+  assert.deepEqual({ ...api.summarizeEntries([{ operation: 'insert', text: 'new' }]) }, {
+    entryCount: 1,
+    changedEntryCount: 1,
+    rangeCount: 1,
+  });
+  assert.deepEqual({ ...api.summarizeEntries([{ operation: 'delete', text: 'old' }]) }, {
+    entryCount: 1,
+    changedEntryCount: 1,
+    rangeCount: 1,
+  });
+});
+
+test('demo stats: adjacent delete and insert entries form one replacement range', () => {
+  const api = loadApi();
+  assert.deepEqual({ ...api.summarizeEntries([
+    { operation: 'equal', text: 'before' },
+    { operation: 'delete', text: 'old' },
+    { operation: 'insert', text: 'new' },
+    { operation: 'equal', text: 'after' },
+  ]) }, {
+    entryCount: 4,
+    changedEntryCount: 2,
+    rangeCount: 1,
+  });
+});
+
+test('demo stats: equal entries separate changed ranges', () => {
+  const api = loadApi();
+  assert.deepEqual({ ...api.summarizeEntries([
+    { operation: 'delete', text: 'one' },
+    { operation: 'insert', text: 'first' },
+    { operation: 'equal', text: ' shared ' },
+    { operation: 'delete', text: 'two' },
+    { operation: 'insert', text: 'second' },
+  ]) }, {
+    entryCount: 5,
+    changedEntryCount: 4,
+    rangeCount: 2,
+  });
 });
