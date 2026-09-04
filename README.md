@@ -5,21 +5,33 @@
 [![coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/krkarma777/string-diff/actions/workflows/ci.yml)
 [![weekly downloads](https://img.shields.io/npm/dw/%40krkarma777%2Fstring-diff)](https://www.npmjs.com/package/@krkarma777/string-diff)
 [![total downloads](https://badgen.net/npm/dt/@krkarma777/string-diff?label=total%20downloads)](https://npm-stat.com/charts.html?package=%40krkarma777%2Fstring-diff)
-[![minzipped size](https://img.shields.io/badge/min%2Bgzip-2.9%20kB-blue)](#how-it-works)
+[![minzipped size](https://img.shields.io/badge/min%2Bgzip-3.9%20kB-blue)](#how-it-works)
 [![dependencies](https://img.shields.io/badge/dependencies-0-blue)](package.json)
 [![types](https://img.shields.io/badge/types-included-blue)](dist/index.d.ts)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, or line** and get the guaranteed-shortest edit script (`equal` / `insert` / `delete`), powered by **Myers' O(ND) algorithm** on typed arrays. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~2.9 KB min+gzip in the browser.
+Fast **text diff** and **string comparison** library for JavaScript and TypeScript. Compare two strings by **word, character, line, locale-aware word, or grapheme** and get an exact shortest edit script (`equal` / `insert` / `delete`) by default, powered by **Myers' O(ND) algorithm** on typed arrays. An opt-in heuristic bounds search work on pathological inputs but may return a non-minimal script. Zero dependencies, Unicode-safe (Korean, CJK, emoji), ~3.9 KB min+gzip in the browser.
 
 Use it for text comparison UIs, document revision history, editor change tracking, test output diffing, or anywhere you need to highlight the difference between two strings — in Node.js or any browser. **[Try the live demo.](https://krkarma777.github.io/string-diff/)**
 
 ## Features
 
-- **Shortest edit script, guaranteed** — the exact Myers algorithm with the linear-space divide-and-conquer refinement (the same family git uses). No heuristic cutoffs; output is verified optimal against a reference DP in the test suite.
+- **Exact shortest edit script by default** — the default path uses the exact Myers algorithm with the linear-space divide-and-conquer refinement (the same family git uses), and its output is verified optimal against a reference DP in the test suite. Opt-in `{ heuristic: true }` bounds search work but may return a non-minimal script.
 - **Extreme constant-factor tuning** — every token is interned to an integer once, so the hot loops compare `Int32Array` elements instead of strings; search state lives in two preallocated typed-array scratch buffers reused across the whole recursion (zero GC pressure); common prefixes/suffixes are stripped in O(N).
-- **Unicode-aware tokenization** — `word` mode splits on Unicode letter/digit properties, so Korean, Japanese, and other non-ASCII scripts diff by word instead of collapsing into one opaque blob. `char` mode is code-point safe (no surrogate splitting).
-- **Fully synchronous, zero dependencies** — no worker gymnastics, no async overhead. ~2.9 KB min+gzip browser bundle.
+- **Unicode-aware boundaries** — `word` mode recognizes Unicode letter and digit runs, while opt-in `intl-word` mode uses `Intl.Segmenter` for unspaced scripts such as Japanese, Chinese, and Thai.
+- **Grapheme-safe output** — `char` mode is code-point safe, and opt-in `grapheme` mode keeps ZWJ emoji and combining sequences together.
+- **Fully synchronous, zero dependencies** — no worker gymnastics, no async overhead. ~3.9 KB min+gzip browser bundle.
+
+## Why another diff library?
+
+This package is for applications that need predictable correctness without giving up a controlled response to pathological input:
+
+- **Exact by default** — the normal path returns a shortest edit script, verified against a reference dynamic-programming implementation in the test suite.
+- **Explicit escape hatch** — `{ heuristic: true }` trades guaranteed minimality for bounded search work only when the caller chooses it. Run `npm run perf:smoke` to exercise the repository's seeded ~8 KB completely-different character path in both modes; on the documented environment, heuristic timing was roughly 8 ms versus roughly 233 ms for exact mode.
+- **Unicode-aware boundaries** — scanner modes cover fast Unicode-aware word, code-point, and line diffs; `Intl.Segmenter` modes add locale-aware words and grapheme clusters.
+- **UI-ready output** — use merged text entries for rendering or, with `ignoreCase` and `ignoreWhitespace` disabled, `diffRanges()` for UTF-16 offsets that slice both original inputs without converting between output models.
+
+Typical benchmark inputs are already around a millisecond across the compared libraries, so those differences rarely decide an application. See the [full benchmark table](#benchmarks) and [`bench/compare.mjs`](bench/compare.mjs), then run `npm run bench` on the target environment for the cross-library comparison. Use `npm run perf:smoke` for the seeded ~8 KB exact-versus-heuristic timing path; timings vary by environment.
 
 ## Install
 
@@ -67,14 +79,14 @@ Browser (IIFE bundle, global `StringDiff`):
 
 ### `diff(a, b, options?)`
 
-Returns `DiffEntry[]` — the shortest edit script between `a` and `b`.
+Returns `DiffEntry[]` — an exact shortest edit script between `a` and `b` by default. With `{ heuristic: true }`, the result remains a valid edit script but may be non-minimal.
 
 | option | type | default | description |
 |---|---|---|---|
 | `mode` | `'word' \| 'char' \| 'line' \| 'intl-word' \| 'grapheme'` | `'word'` | tokenization granularity |
 | `locale` | `string \| string[]` | runtime locale | BCP 47 locale(s) for the `Intl.Segmenter` modes |
 | `refine` | `boolean` | `false` | re-diff each delete/insert pair one level finer (`line`→word, `word`→char), e.g. `quick`→`quicker` reports just `+er` |
-| `heuristic` | `boolean` | `false` | cap the search cost like git does, keeping pathological inputs fast (the 227 ms worst case below drops to ~8 ms, +8% edit-script size); output stays identical to exact mode while the edit distance is small |
+| `heuristic` | `boolean` | `false` | bound search work on pathological inputs; the result may be non-minimal, but stays identical to exact mode while the edit distance is small; use `npm run perf:smoke` for the seeded exact-versus-heuristic timing path |
 | `ignoreCase` | `boolean` | `false` | compare tokens case-insensitively |
 | `ignoreWhitespace` | `boolean` | `false` | whitespace runs compare equal (`line` mode: lines compared trimmed); whitespace with no counterpart still diffs |
 
@@ -96,7 +108,9 @@ The `Intl.Segmenter` modes are opt-in because they're slower than the scanner mo
 
 ### `diffRanges(a, b, options?)`
 
-The same diff as offset tuples instead of text entries — for editors, highlighters, and anyone who wants to slice the originals themselves. Each `[aStart, aEnd, bStart, bEnd]` says `a[aStart, aEnd)` was replaced by `b[bStart, bEnd)` (either side may be empty for pure insertions/deletions; offsets are UTF-16 code units).
+Returns the same diff as offset tuples instead of text entries — useful for editors, highlighters, and other callers that want ranges rather than merged text. Each `[aStart, aEnd, bStart, bEnd]` says `a[aStart, aEnd)` was replaced by `b[bStart, bEnd)` (either side may be empty for pure insertions/deletions; offsets are UTF-16 code units).
+
+When offsets must slice both original inputs, keep `ignoreCase` and `ignoreWhitespace` disabled (the defaults). With either option enabled, `equal` text comes from `b`, so ranges may not be valid for slicing both original inputs and an `a`-side endpoint can exceed `a.length`.
 
 ```ts
 diffRanges('the quick fox', 'the slow fox');
@@ -120,11 +134,11 @@ interface DiffEntry {
 }
 ```
 
-Within a changed region, `delete` always precedes `insert`, and adjacent tokens with the same operation are merged into a single entry. Concatenating all non-`insert` texts reproduces `a`; all non-`delete` texts reproduce `b`.
+Within a changed region, `delete` always precedes `insert`, and adjacent tokens with the same operation are merged into a single entry. With the default normalization options, concatenating all non-`insert` texts reproduces `a`, and all non-`delete` texts reproduce `b`. With `ignoreCase` or `ignoreWhitespace`, `b`-side reconstruction remains exact while `a`-side reconstruction holds only up to the ignored differences.
 
 ## Benchmarks
 
-Against the popular npm diff libraries — [`diff` (jsdiff)](https://www.npmjs.com/package/diff) v9.0.0, [`diff-match-patch`](https://www.npmjs.com/package/diff-match-patch) v1.0.5, and [`fast-myers-diff`](https://www.npmjs.com/package/fast-myers-diff) v3.2.0 — each driven through its own idiomatic API, timed end-to-end from raw strings (`npm run bench`, Node v24, Apple Silicon, median of repeated runs; ratios are relative to this package):
+Against the popular npm diff libraries — [`diff` (jsdiff)](https://www.npmjs.com/package/diff) v9.0.0, [`diff-match-patch`](https://www.npmjs.com/package/diff-match-patch) v1.0.5, and [`fast-myers-diff`](https://www.npmjs.com/package/fast-myers-diff) v3.2.0 — each driven through its own idiomatic API, timed end-to-end from raw strings (`npm run bench`, Node v24, Apple Silicon, median of repeated runs; this package uses its default exact mode, and ratios are relative to it):
 
 | scenario | string-diff | jsdiff | diff-match-patch (default) | diff-match-patch (exact) | fast-myers-diff |
 |---|---|---|---|---|---|
@@ -136,8 +150,8 @@ Against the popular npm diff libraries — [`diff` (jsdiff)](https://www.npmjs.c
 How to read this honestly:
 
 - **On typical inputs every library here is sub-millisecond-ish** — the differences are fractions of a millisecond and won't matter to most applications.
-- **The worst case is where libraries separate**, and it's the row that decides whether your UI freezes on pathological input: this package is 2.6–10× faster than everything tested, while still returning a provably minimal diff. If you'd rather trade minimality for speed there, `{ heuristic: true }` brings that row to ~8 ms (edit script ~8% larger) — still exact whenever the edit distance is small.
-- `diff-match-patch` (default) trades exactness for speed by design — its documented timeout heuristics can return non-minimal diffs. This package never does.
+- **The worst case is where libraries separate**, and it's the row that decides whether your UI freezes on pathological input: in this documented run, this package's default exact mode measured 2.6–10× faster than everything tested while returning a provably minimal diff. The opt-in heuristic can reduce search time further but may return a non-minimal script; run `npm run perf:smoke` for the seeded exact-versus-heuristic timing path.
+- `diff-match-patch` (default) trades exactness for speed by design — its documented timeout heuristics can return non-minimal diffs. This package's default exact mode does not; its opt-in heuristic may also return a non-minimal script.
 - `fast-myers-diff` has no tokenizer and emits index ranges rather than text entries, so its rows do less output work (word/line rows reuse our tokenizer); `diff-match-patch` has no built-in word or line API.
 
 Notes for fairness are in [`bench/compare.mjs`](bench/compare.mjs). For history: versus the Hirschberg LCS implementation this repository originally shipped, typical scenarios are **~1,000× faster** (`npm run bench:legacy`).
@@ -154,6 +168,13 @@ Notes for fairness are in [`bench/compare.mjs`](bench/compare.mjs). For history:
 
 Hosted: **[krkarma777.github.io/string-diff](https://krkarma777.github.io/string-diff/)** (deployed from `master` by CI).
 
+### Prefilled examples
+
+- [Korean word replacement](https://krkarma777.github.io/string-diff/#a=%EC%95%88%EB%85%95%ED%95%98%EC%84%B8%EC%9A%94+%EC%84%B8%EA%B3%84&b=%EC%95%88%EB%85%95%ED%95%98%EC%84%B8%EC%9A%94+%EC%A7%80%EA%B5%AC&mode=word)
+- [Japanese locale-aware words](https://krkarma777.github.io/string-diff/#a=%E7%A7%81%E3%81%AF%E7%8C%AB%E3%81%8C%E5%A5%BD%E3%81%8D%E3%81%A7%E3%81%99&b=%E7%A7%81%E3%81%AF%E7%8A%AC%E3%81%8C%E5%A5%BD%E3%81%8D%E3%81%A7%E3%81%99&mode=intl-word&locale=ja)
+- [Grapheme-safe family emoji](https://krkarma777.github.io/string-diff/#a=Family%3A+%F0%9F%91%A8%E2%80%8D%F0%9F%91%A9%E2%80%8D%F0%9F%91%A7&b=Family%3A+%F0%9F%91%A8%E2%80%8D%F0%9F%91%A9%E2%80%8D%F0%9F%91%A6&mode=grapheme)
+- [Ignore case and whitespace](https://krkarma777.github.io/string-diff/#a=Hello%2C+++WORLD%21%0ANext+line&b=hello%2C+WORLD%21%0ANext+line&mode=word&ignoreCase=1&ignoreWhitespace=1)
+
 Locally:
 
 ```sh
@@ -168,12 +189,13 @@ npm test              # node:test — unit + 1,100 fuzz round-trips + 300 optima
 npm run typecheck
 npm run build         # tsup → ESM + CJS + IIFE + .d.ts
 npm run bench         # vs jsdiff / diff-match-patch / fast-myers-diff (build first)
+npm run perf:smoke    # seeded ~8 KB exact/heuristic timing path
 npm run bench:legacy  # vs the original Hirschberg LCS implementation
 ```
 
 ## Contributing
 
-Issues and pull requests are welcome. Please run `npm run typecheck && npm test` before opening a PR — the suite includes fuzz round-trips and optimality checks against a reference implementation, so a passing run is a strong signal the change is safe.
+Issues and pull requests are welcome. See the [contribution guide](CONTRIBUTING.md) for the Node.js setup, TDD workflow, verification gate, and performance-testing requirements.
 
 ## References
 

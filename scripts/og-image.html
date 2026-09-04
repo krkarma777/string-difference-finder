@@ -60,28 +60,39 @@
   .sample .del { background: var(--del-bg); color: var(--del-text); text-decoration: line-through; border-radius: 6px; padding: 2px 6px; }
   .sample .ins { background: var(--ins-bg); color: var(--ins-text); border-radius: 6px; padding: 2px 6px; }
   .sample .ms { color: var(--muted); font-size: 24px; margin-left: 18px; }
-  .chips { display: flex; gap: 16px; }
+  .modes {
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 26px;
+  }
+  .chips { display: flex; gap: 12px; }
   .chip {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 12px 26px;
-    font-size: 24px;
+    padding: 10px 20px;
+    font-size: 21px;
     color: var(--muted);
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .chip strong { color: var(--text); font-weight: 600; }
+  .chip.heuristic { flex-direction: column; gap: 2px; }
+  .chip small { font-size: 13px; }
 </style>
 </head>
 <body>
   <div class="pkg">@krkarma777/string-diff</div>
   <h1>Fast text diff for<br>JavaScript &amp; TypeScript</h1>
+  <div class="modes">word · char · line · intl-word · grapheme</div>
   <div class="sample">the <span class="del">quick</span> <span class="ins">slow</span> fox — 안녕하세요 <span class="del">👋</span> <span class="ins">🌍</span><span class="ms">diff in 0.03 ms</span></div>
   <div class="chips">
-    <div class="chip"><strong>Myers O(ND)</strong>&nbsp;exact</div>
+    <div class="chip"><strong>exact by default</strong></div>
+    <div class="chip heuristic"><strong>optional heuristic</strong><small>bounded search · may be non-minimal</small></div>
     <div class="chip"><strong>0</strong>&nbsp;dependencies</div>
-    <div class="chip"><strong>~2.9 kB</strong>&nbsp;min+gzip</div>
-    <div class="chip"><strong>Unicode-safe</strong>&nbsp;· CJK · emoji</div>
+    <div class="chip"><strong>~3.9 kB</strong>&nbsp;min+gzip</div>
   </div>
 </body>
 </html>

@@ -1,7 +1,9 @@
 node_modules/
 dist/
+coverage/
 demo/string-diff.min.js
 *.tsbuildinfo
+.superpowers/
 
 ### Docs ###
 docs/

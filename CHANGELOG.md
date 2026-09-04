@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- The hosted demo now exposes every v1.2 diff mode and option, restores comparisons from shareable URL hashes, and reports entry and changed-range counts alongside timing.
+
+### Changed
+- Shared demo comparisons over 16,000 combined input code units now wait for an explicit Compare click instead of running automatically.
+- Corrected adopter-facing metadata and emitted API documentation to cover all five modes, exact-by-default behavior, the optional non-minimal heuristic, zero dependencies, the current ~3.9 kB min+gzip browser size, and range normalization caveats.
+
 ## [1.2.0] - 2026-08-31
 
 ### Added

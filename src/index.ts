@@ -60,7 +60,8 @@ export interface DiffTokensOptions {
 }
 
 /**
- * Computes a shortest-edit-script diff between two strings.
+ * Computes a shortest edit script between two strings by default. With
+ * `heuristic: true`, the edit script remains valid but may be non-minimal.
  *
  * Within a changed region, the delete entry always precedes the insert
  * entry, and adjacent tokens with the same operation are merged into a
@@ -103,6 +104,8 @@ const REFINE_TARGET: Partial<Record<DiffMode, DiffMode>> = {
  * A changed region as code-unit offsets into the inputs:
  * a[aStart, aEnd) was replaced by b[bStart, bEnd). Either side (but never
  * both) may be empty, representing a pure insertion or deletion.
+ * With `ignoreCase` and `ignoreWhitespace` disabled (the default), these
+ * offsets slice both original input strings.
  */
 export type DiffRange = [aStart: number, aEnd: number, bStart: number, bEnd: number];
 
@@ -111,6 +114,10 @@ export type DiffRange = [aStart: number, aEnd: number, bStart: number, bEnd: num
  * of text entries — convenient for editors, highlighters, and any consumer
  * that wants to slice the originals itself. Equivalent to projecting the
  * entries of diff(a, b, options) onto string offsets.
+ *
+ * When either ignore option is enabled, equal text is taken from `b`, so
+ * offsets are not guaranteed to slice both originals. Callers needing that
+ * guarantee must keep both disabled.
  */
 export function diffRanges(a: string, b: string, options: DiffOptions = {}): DiffRange[] {
   const entries = diff(a, b, options);
@@ -166,7 +173,11 @@ function refineEntries(entries: DiffEntry[], finerMode: DiffMode, options: DiffO
   return out;
 }
 
-/** Diffs two pre-tokenized sequences. Tokens are compared by exact string equality. */
+/**
+ * Diffs two pre-tokenized sequences.
+ * Tokens compare by exact string equality by default; `ignoreCase` and
+ * `ignoreWhitespace` normalize comparison when enabled.
+ */
 export function diffTokens(
   aTokens: readonly string[], bTokens: readonly string[], options: DiffTokensOptions = {},
 ): DiffEntry[] {
